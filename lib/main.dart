@@ -11,12 +11,15 @@ import 'models/user_model.dart';
 import 'models/quiz_model.dart';
 import 'models/result_model.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/about_us_screen.dart';
 import 'screens/dashboards.dart';
 import 'screens/student/student_dashboard.dart';
 import 'screens/student/quiz_attempt_screen.dart';
 import 'screens/student/review_quiz_screen.dart';
+import 'screens/student/grade_history_screen.dart';
 import 'screens/teacher/teacher_dashboard.dart';
 import 'screens/teacher/create_quiz_screen.dart';
+import 'screens/teacher/quiz_results_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/super_admin/super_admin_dashboard.dart';
 
@@ -56,14 +59,15 @@ class MainAppRouter extends StatelessWidget {
       redirect: (context, state) {
         final isLoggedIn = userProvider.isLoggedIn;
         final isLoggingIn = state.uri.toString() == '/login';
+        final isAbout = state.uri.toString() == '/about';
         
         if (userProvider.isLoading) return null; // Or specific splash path
 
         if (!isLoggedIn) {
-          return isLoggingIn ? null : '/login';
+          return (isLoggingIn || isAbout) ? null : '/login';
         }
 
-        // If logged in, prevent going to login
+        // If logged in, prevent going to login, but allow About
         if (isLoggingIn) {
           return _getHomeRoute(userProvider.user?.role);
         }
@@ -81,6 +85,10 @@ class MainAppRouter extends StatelessWidget {
           builder: (context, state) => const LoginScreen(),
         ),
         GoRoute(
+          path: '/about',
+          builder: (context, state) => const AboutUsScreen(),
+        ),
+        GoRoute(
           path: '/super_admin',
           builder: (context, state) => const SuperAdminDashboard(),
         ),
@@ -94,13 +102,29 @@ class MainAppRouter extends StatelessWidget {
           routes: [
             GoRoute(
               path: 'create-quiz',
-              builder: (context, state) => const CreateQuizScreen(),
+              builder: (context, state) {
+                final quizToEdit = state.extra as QuizModel?;
+                return CreateQuizScreen(quizToEdit: quizToEdit);
+              },
+            ),
+            GoRoute(
+              path: 'results',
+              builder: (context, state) {
+                final quiz = state.extra as QuizModel;
+                return QuizResultsScreen(quiz: quiz);
+              },
             ),
           ],
         ),
         GoRoute(
           path: '/student',
           builder: (context, state) => const StudentDashboard(),
+          routes: [
+            GoRoute(
+              path: 'history',
+              builder: (context, state) => const GradeHistoryScreen(),
+            ),
+          ],
         ),
         GoRoute(
           path: '/attempt-quiz',

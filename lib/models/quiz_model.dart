@@ -79,7 +79,7 @@ class QuizModel {
     return QuizModel(
       id: map['id'] ?? '',
       title: map['title'] ?? '',
-      createdByUid: map['createdByUid'] ?? '',
+      createdByUid: map['createdByUid'] ?? map['createdBy'] ?? '',
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.fromMillisecondsSinceEpoch(map['createdAt'] ?? 0),

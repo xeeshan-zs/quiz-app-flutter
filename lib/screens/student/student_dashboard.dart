@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../models/quiz_model.dart';
 import '../../services/firestore_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../models/result_model.dart';
-import 'package:intl/intl.dart';
+
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -17,6 +17,8 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   final FirestoreService _firestoreService = FirestoreService();
+  String _searchQuery = '';
+  String _sortOption = 'Title (A-Z)';
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,23 @@ class _StudentDashboardState extends State<StudentDashboard> {
           }
           if (quizSnapshot.hasError) return Center(child: Text('Error: ${quizSnapshot.error}'));
 
-          final quizzes = quizSnapshot.data ?? [];
+          var quizzes = quizSnapshot.data ?? [];
+
+          // Filter by Search Query
+          if (_searchQuery.isNotEmpty) {
+            quizzes = quizzes.where((q) => q.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+          }
+
+          // Sort
+          if (_sortOption == 'Title (A-Z)') {
+            quizzes.sort((a, b) => a.title.compareTo(b.title));
+          } else if (_sortOption == 'Title (Z-A)') {
+            quizzes.sort((a, b) => b.title.compareTo(a.title));
+          } else if (_sortOption == 'Duration (Shortest)') {
+            quizzes.sort((a, b) => a.durationMinutes.compareTo(b.durationMinutes));
+          } else if (_sortOption == 'Duration (Longest)') {
+            quizzes.sort((a, b) => b.durationMinutes.compareTo(a.durationMinutes));
+          }
 
           return StreamBuilder<List<ResultModel>>(
             stream: _firestoreService.getResultsForStudent(user.uid),
@@ -43,7 +61,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
               // Fallback for old data
               final attemptedQuizTitles = results.where((r) => r.quizId.isEmpty).map((r) => r.quizTitle).toSet();
 
-              final availableQuizzes = quizzes.where((q) {
+              final availableQuizzes = quizzes.where((q) { // Filtered quizzes are now used here
                 final isIdMatch = attemptedQuizIds.contains(q.id);
                 final isTitleMatch = attemptedQuizTitles.contains(q.title);
                 return !isIdMatch && !isTitleMatch;
@@ -57,15 +75,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface, // Use surface for clean look, or primaryContainer
-                        // gradient: LinearGradient(
-                        //   colors: [
-                        //     Theme.of(context).colorScheme.primaryContainer,
-                        //     Theme.of(context).colorScheme.surface,
-                        //   ],
-                        //   begin: Alignment.topCenter,
-                        //   end: Alignment.bottomCenter,
-                        // ),
+                        color: const Color(0xFF1E1B2E),
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFF2E236C),
+                            Color(0xFF433D8B),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -74,14 +96,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               // Brand/Logo Area
-                              Row(
+                              const Row(
                                 children: [
-                                  Icon(Icons.school, color: Theme.of(context).colorScheme.primary, size: 28),
-                                  const SizedBox(width: 8),
+                                  Icon(Icons.school, color: Colors.white, size: 28),
+                                  SizedBox(width: 8),
                                   Text(
                                     'QuizApp',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color: Colors.white,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -93,14 +115,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 children: [
                                   TextButton.icon(
                                     onPressed: () {}, 
-                                    icon: const Icon(Icons.home), 
-                                    label: const Text('Home')
+                                    icon: const Icon(Icons.home, color: Colors.white70), 
+                                    label: const Text('Home', style: TextStyle(color: Colors.white70))
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () => context.go('/student/history'), 
+                                    icon: const Icon(Icons.history, color: Colors.white70), 
+                                    label: const Text('History', style: TextStyle(color: Colors.white70))
                                   ),
                                   TextButton.icon(
                                     onPressed: () => context.read<UserProvider>().logout(),
-                                    icon: const Icon(Icons.logout), 
+                                    icon: const Icon(Icons.logout, size: 20), 
                                     label: const Text('Logout'),
-                                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.redAccent,
+                                      backgroundColor: Colors.white.withOpacity(0.1),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -111,7 +141,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             'Welcome back, ${user.name}!',
                             style: Theme.of(context).textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
+                              color: Colors.white,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -119,7 +149,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           Text(
                             'Ready to challenge yourself? Select an active quiz below or review your past achievements.',
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Colors.white70,
+                              fontSize: 16,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -127,6 +158,59 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         ],
                       ),
                     ),
+                  ),
+
+                  // Controls Section (Search & Sort)
+                  SliverToBoxAdapter(
+                     child: Padding(
+                       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                       child: Row(
+                         children: [
+                           Expanded(
+                             child: TextField(
+                               onChanged: (val) => setState(() => _searchQuery = val),
+                               decoration: InputDecoration(
+                                 hintText: 'Search quizzes...',
+                                 prefixIcon: const Icon(Icons.search),
+                                 filled: true,
+                                 fillColor: Colors.white,
+                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                 border: OutlineInputBorder(
+                                   borderRadius: BorderRadius.circular(12),
+                                   borderSide: BorderSide.none,
+                                 ),
+                                 enabledBorder: OutlineInputBorder(
+                                   borderRadius: BorderRadius.circular(12),
+                                   borderSide: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                                 ),
+                               ),
+                             ),
+                           ),
+                           const SizedBox(width: 16),
+                           Container(
+                             padding: const EdgeInsets.symmetric(horizontal: 12),
+                             decoration: BoxDecoration(
+                               color: Colors.white,
+                               borderRadius: BorderRadius.circular(12),
+                               border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                             ),
+                             child: DropdownButtonHideUnderline(
+                               child: DropdownButton<String>(
+                                 value: _sortOption,
+                                 icon: const Icon(Icons.sort),
+                                 borderRadius: BorderRadius.circular(12),
+                                 items: ['Title (A-Z)', 'Title (Z-A)', 'Duration (Shortest)', 'Duration (Longest)']
+                                     .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13))))
+                                     .toList(),
+                                 onChanged: (val) {
+                                   if (val != null) setState(() => _sortOption = val);
+                                 },
+                               ),
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
                   ),
 
                   // Section Header
@@ -175,7 +259,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       sliver: SliverGrid(
                         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 400, // Responsive width
-                          mainAxisExtent: 220, // Fixed height for consistency
+                          mainAxisExtent: 280, // Increased height to prevent overflow
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 20,
                         ),
@@ -205,7 +289,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
+        side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -264,7 +348,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ],
         ),
       ),
-    ).animate().fadeIn().slideY(begin: 0.2, end: 0);
+    );
   }
 
   Widget _buildInfoBadge(BuildContext context, IconData icon, String label) {
@@ -272,7 +356,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

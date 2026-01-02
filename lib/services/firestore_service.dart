@@ -71,6 +71,10 @@ class FirestoreService {
       await _db.collection('quizzes').doc(quizId).update({'isPaused': !currentStatus});
   }
 
+  Future<void> deleteQuiz(String quizId) async {
+    await _db.collection('quizzes').doc(quizId).delete();
+  }
+
   // --- Result Methods ---
 
   Future<void> submitResult(ResultModel result) async {
@@ -81,6 +85,16 @@ class FirestoreService {
     return _db
         .collection('results')
         .where('studentId', isEqualTo: studentId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ResultModel.fromMap(doc.data()))
+            .toList());
+  }
+
+  Stream<List<ResultModel>> getResultsByQuizId(String quizId) {
+    return _db
+        .collection('results')
+        .where('quizId', isEqualTo: quizId)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ResultModel.fromMap(doc.data()))

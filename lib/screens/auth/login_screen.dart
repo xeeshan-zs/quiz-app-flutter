@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -107,6 +108,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text('Login'),
                     ),
                    ).animate().fadeIn(delay: 400.ms),
+                   const SizedBox(height: 24),
+                   TextButton.icon(
+                     onPressed: () => GoRouter.of(context).push('/about'),
+                     icon: const Icon(Icons.info_outline, size: 16),
+                     label: const Text('About Us'),
+                   ).animate().fadeIn(delay: 600.ms),
                 ],
               ),
             ),
