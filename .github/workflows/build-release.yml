@@ -1,0 +1,130 @@
+name: Build Release Apps
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: EduSync-Android-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  build-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Create Windows Installer with Inno Setup
+        run: |
+          # Download Inno Setup
+          choco install innosetup -y
+          
+          # Create Inno Setup script
+          @"
+          [Setup]
+          AppName=EduSync
+          AppVersion=1.0.0
+          AppPublisher=EduSync Team
+          DefaultDirName={autopf}\EduSync
+          DefaultGroupName=EduSync
+          OutputDir=.\installer
+          OutputBaseFilename=EduSync-Setup
+          Compression=lzma
+          SolidCompression=yes
+          SetupIconFile=.\web\favicon.png
+          UninstallDisplayIcon={app}\quiz_app.exe
+          
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+          
+          [Icons]
+          Name: "{group}\EduSync"; Filename: "{app}\quiz_app.exe"
+          Name: "{commondesktop}\EduSync"; Filename: "{app}\quiz_app.exe"
+          
+          [Run]
+          Filename: "{app}\quiz_app.exe"; Description: "Launch EduSync"; Flags: nowait postinstall skipifsilent
+          "@ | Out-File -FilePath .\setup.iss -Encoding UTF8
+          
+          # Run Inno Setup
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .\setup.iss
+        shell: pwsh
+
+      - name: Upload Windows Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: EduSync-Windows-Setup
+          path: installer/EduSync-Setup.exe
+
+      - name: Upload Windows Portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: EduSync-Windows-Portable
+          path: build/windows/x64/runner/Release/
+
+  create-release:
+    name: Create Release
+    needs: [build-android, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/EduSync-Android-APK/app-release.apk
+            artifacts/EduSync-Windows-Setup/EduSync-Setup.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
