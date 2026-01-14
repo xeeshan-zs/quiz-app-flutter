@@ -77,7 +77,6 @@ jobs:
           OutputBaseFilename=EduSync-Setup
           Compression=lzma
           SolidCompression=yes
-          SetupIconFile=.\web\favicon.png
           UninstallDisplayIcon={app}\quiz_app.exe
           
           [Files]
