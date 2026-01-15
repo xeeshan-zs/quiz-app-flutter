@@ -1,11 +1,7 @@
 name: Build Release Apps
 
 on:
-  push:
-    branches: [main, master]
-    tags:
-      - 'v*'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Allow manual trigger only
 
 jobs:
   build-android:

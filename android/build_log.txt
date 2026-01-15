@@ -1,0 +1,38 @@
+﻿.\gradlew : WARNING: A restricted method in 
+java.lang.System has been called
+At line:1 char:67
++ ... es (x86)\Android\android-sdk"; .\gradlew 
+assembleRelease 2>&1 | Out-F ...
++                                    
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNIN 
+   G: A rest...has been called:String) [], RemoteE  
+  xception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: java.lang.System::load has been called by n
+et.rubygrapefruit.platform.internal.NativeLibraryLoa
+der in an unnamed module (file:/C:/Users/Shani/.grad
+le/wrapper/dists/gradle-8.11.1-all/2qik7nd48slq1ooc2
+496ixf4i/gradle-8.11.1/lib/native-platform-0.22-mile
+stone-26.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to 
+avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a 
+future release unless native access is enabled
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+25
+
+* Try:
+> Run with --stacktrace option to get the stack 
+trace.
+> Run with --info or --debug option to get more log 
+output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s

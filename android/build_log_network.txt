@@ -1,0 +1,53 @@
+﻿.\gradlew : 
+At line:1 char:141
++ ... es (x86)\Android\android-sdk"; .\gradlew 
+assembleRelease 2>&1 | Out-F ...
++                                    
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:Strin 
+   g) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+FAILURE: Build failed with an exception.
+
+* Where:
+Settings file 'C:\Users\Shani\Documents\GitHub\quiz 
+app flutter\android\settings.gradle.kts' line: 20
+
+* What went wrong:
+Error resolving plugin [id: 
+'dev.flutter.flutter-plugin-loader', version: 
+'1.0.0']
+> A problem occurred configuring project ':gradle'.
+   > Could not resolve all artifacts for 
+configuration 'classpath'.
+      > Could not resolve 
+org.gradle.kotlin:gradle-kotlin-dsl-plugins:5.1.1.
+        Required by:
+            project :gradle > org.gradle.kotlin.kotl
+in-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:5.
+1.1
+         > Could not resolve 
+org.gradle.kotlin:gradle-kotlin-dsl-plugins:5.1.1.
+            > Could not get resource 'https://plugin
+s.gradle.org/m2/org/gradle/kotlin/gradle-kotlin-dsl-
+plugins/5.1.1/gradle-kotlin-dsl-plugins-5.1.1.pom'.
+               > Could not GET 'https://plugins-arti
+facts.gradle.org/org.gradle.kotlin/gradle-kotlin-dsl
+-plugins/5.1.1/5683dc327352adf7c2d3015f2899dc17dac5f
+9bc7f297c92230233c33b220ed1/gradle-kotlin-dsl-plugin
+s-5.1.1.pom'.
+                  > This is usually a temporary 
+error during hostname resolution and means that the 
+local server did not receive a response from an 
+authoritative server (plugins-artifacts.gradle.org)
+
+* Try:
+> Run with --stacktrace option to get the stack 
+trace.
+> Run with --info or --debug option to get more log 
+output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s
