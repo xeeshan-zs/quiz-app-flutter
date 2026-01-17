@@ -53,10 +53,13 @@ Get the latest version of EduSync for your device:
 ## 📸 Screenshots
 
 <div align="center">
-  <!-- Upload your screenshots to a 'screenshots' folder and link them here -->
-  <!-- <img src="screenshots/home.png" width="200" /> -->
-  <!-- <img src="screenshots/quiz.png" width="200" /> -->
-  <p><em>Add your beautiful app screenshots here!</em></p>
+  <img src="screenshots/landing_page.png" width="800" alt="Landing Page" />
+  <br/><br/>
+  <img src="screenshots/student_dashboard.png" width="800" alt="Student Dashboard" />
+  <br/><br/>
+  <img src="screenshots/teacher_dashboard.png" width="800" alt="Teacher Dashboard" />
+  <br/><br/>
+  <img src="screenshots/admin_dashboard.png" width="800" alt="Admin Dashboard" />
 </div>
 
 ## 🛠️ Getting Started
@@ -96,9 +99,3 @@ To build and run this project locally:
 *   **State Management**: Provider
 *   **Routing**: GoRouter
 *   **Windows Installer**: Inno Setup
-
----
-
-<div align="center">
-  Made with ❤️ by the EduSync Team
-</div>
