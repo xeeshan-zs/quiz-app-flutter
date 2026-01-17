@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/user_provider.dart';
 import '../widgets/quiz_app_bar.dart';
 import '../widgets/quiz_app_drawer.dart';
@@ -287,19 +288,30 @@ class LandingPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.school_rounded, color: Colors.white, size: 32),
-            const SizedBox(width: 12),
-            Text(
-              'EduSync',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+        GestureDetector(
+          onTap: () async {
+            final uri = Uri.parse('https://quiz-flutter.netlify.app/');
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, webOnlyWindowName: '_blank');
+            }
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Row(
+              children: [
+                const Icon(Icons.school_rounded, color: Colors.white, size: 32),
+                const SizedBox(width: 12),
+                Text(
+                  'EduSync',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         const SizedBox(height: 16),
         Text(

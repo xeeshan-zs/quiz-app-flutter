@@ -53,11 +53,11 @@ class DefaultFirebaseOptions {
 
   // TODO: Replace with your keys from Firebase Console > Project Settings > General > Android App
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_ANDROID_API_KEY',
-    appId: 'REPLACE_WITH_ANDROID_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_MESSAGING_SENDER_ID',
+    apiKey: 'AIzaSyC9-TLjKDBBByY3ifDnnWlgbvNJXxOxWDI',
+    appId: '1:164927083458:android:608e5db52501d756177c5b',
+    messagingSenderId: '164927083458',
     projectId: 'battery-quiz',
-    storageBucket: 'battery-quiz.appspot.com',
+    storageBucket: 'battery-quiz.firebasestorage.app',
   );
 
   // TODO: Replace with your keys from Firebase Console > Project Settings > General > iOS App

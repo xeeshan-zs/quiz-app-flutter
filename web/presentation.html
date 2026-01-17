@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduSync Presentation | Zeeshan Sarfraz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #e0e5ec;
+            --text-main: #4a5568;
+            --text-highlight: #2d3748;
+            --accent-blue: #3182ce;
+            --shadow-light: #ffffff;
+            --shadow-dark: #a3b1c6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- Neomorphic Container --- */
+        .presentation-container {
+            width: 90vw;
+            height: 85vh;
+            border-radius: 30px;
+            background: var(--bg-color);
+            box-shadow: 20px 20px 60px var(--shadow-dark),
+                -20px -20px 60px var(--shadow-light);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 40px;
+            transition: all 0.3s ease;
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(163, 177, 198, 0.3);
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--accent-blue);
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
+        }
+
+        .slide-counter {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            background: var(--bg-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            box-shadow: inset 4px 4px 8px var(--shadow-dark),
+                inset -4px -4px 8px var(--shadow-light);
+        }
+
+        /* --- Slide Content --- */
+        .slide-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.5s ease-in-out;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+        }
+
+        .slide.left-align {
+            align-items: flex-start;
+            text-align: left;
+            padding: 0 40px;
+        }
+
+        /* --- Typography --- */
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--text-highlight);
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            color: var(--accent-blue);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: var(--text-highlight);
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            max-width: 800px;
+        }
+
+        ul {
+            list-style: none;
+            text-align: left;
+        }
+
+        li {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        li i {
+            color: var(--accent-blue);
+            margin-right: 15px;
+            font-size: 0.9rem;
+        }
+
+        .sub-text {
+            font-size: 1.1rem;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .team-badge {
+            background: var(--bg-color);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            margin: 5px;
+            font-size: 0.9rem;
+            box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+        }
+
+        /* --- Cards --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .neumorphic-card {
+            background: var(--bg-color);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .neumorphic-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .neumorphic-card i {
+            font-size: 2rem;
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+        }
+
+        /* --- Controls --- */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 6px 6px 10px var(--shadow-dark), -6px -6px 10px var(--shadow-light);
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn.wide {
+            width: auto;
+            border-radius: 20px;
+            padding: 0 25px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            color: var(--accent-blue);
+        }
+
+        .btn:active {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+        }
+
+        /* Loading overlay for PPTX generation */
+        #loading {
+            display: none;
+            margin-left: 10px;
+            font-size: 0.9rem;
+            color: var(--accent-blue);
+        }
+
+        .footer-info {
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            font-size: 0.8rem;
+            color: #a0aec0;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide.active h1,
+        .slide.active h2 {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .slide.active .neumorphic-card {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .slide.active .grid-container .neumorphic-card:nth-child(1) {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .slide.active .grid-container .neumorphic-card:nth-child(2) {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .slide.active .grid-container .neumorphic-card:nth-child(3) {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+
+        .slide.active .grid-container .neumorphic-card:nth-child(4) {
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        .slide.active ul li {
+            animation: fadeInUp 0.4s ease-out forwards;
+            opacity: 0;
+        }
+
+        .slide.active ul li:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .slide.active ul li:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .slide.active ul li:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .slide.active ul li:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        @media print {
+
+            .header,
+            .controls,
+            .footer-info {
+                display: none;
+            }
+
+            body {
+                background: white;
+                height: auto;
+                overflow: visible;
+                display: block;
+            }
+
+            .presentation-container {
+                width: 100%;
+                height: auto;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+            }
+
+            .slide-wrapper {
+                overflow: visible;
+            }
+
+            .slide {
+                position: relative;
+                opacity: 1 !important;
+                transform: none !important;
+                height: 100vh;
+                page-break-after: always;
+                display: flex !important;
+                border-bottom: 1px solid #ddd;
+            }
+
+            * {
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="presentation-container">
+        <div class="header">
+            <div class="brand"><i class="fas fa-graduation-cap"></i> EduSync</div>
+            <div class="slide-counter" id="counter">1 / 10</div>
+        </div>
+
+        <div class="slide-wrapper">
+            <div class="slide active">
+                <div class="neumorphic-card" style="padding: 50px; max-width: 800px; width: 100%;">
+                    <h1 style="color: var(--accent-blue);">EduSync</h1>
+                    <h3>Advanced Quiz Management System</h3>
+                    <div style="margin-top: 30px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 20px;">
+                        <p style="font-weight: 800; font-size: 1.4rem; color: var(--accent-blue); margin-bottom: 5px;">
+                            Team Lead</p>
+                        <p style="font-size: 1.2rem; font-weight: 600;">Zeeshan Sarfraz</p>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <p style="font-weight: 800; font-size: 1.1rem; color: var(--accent-blue); margin-bottom: 10px;">
+                            Team Members</p>
+                        <span class="team-badge">Muneeb Ali</span>
+                        <span class="team-badge">Hammad Saleem</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide left-align">
+                <h2>Project Overview</h2>
+                <div class="grid-container">
+                    <div class="neumorphic-card"><i class="fas fa-mobile-alt"></i>
+                        <h3>What is it?</h3>
+                        <p style="font-size: 1rem;">Multi-platform app for quizzes.</p>
+                    </div>
+                    <div class="neumorphic-card"><i class="fas fa-users-cog"></i>
+                        <h3>Purpose</h3>
+                        <p style="font-size: 1rem;">Connects Admins, Teachers, Students.</p>
+                    </div>
+                    <div class="neumorphic-card"><i class="fas fa-layer-group"></i>
+                        <h3>Platforms</h3>
+                        <p style="font-size: 1rem;">Android, Windows, Web.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide left-align">
+                <h2>Technology Stack</h2>
+                <ul>
+                    <li><i class="fab fa-flutter fa-2x"></i> <strong>Flutter</strong> - Single codebase.</li>
+                    <li><i class="fas fa-code fa-2x"></i> <strong>Dart</strong> - Logic and UI.</li>
+                    <li><i class="fas fa-fire fa-2x"></i> <strong>Firebase Auth</strong> - Security.</li>
+                    <li><i class="fas fa-database fa-2x"></i> <strong>Firestore</strong> - Real-time DB.</li>
+                </ul>
+            </div>
+
+            <div class="slide left-align">
+                <h2>Architecture</h2>
+                <div class="grid-container">
+                    <div class="neumorphic-card">
+                        <h3>MVC / MVVM</h3>
+                        <p class="sub-text">Clean Code</p>
+                    </div>
+                    <div class="neumorphic-card">
+                        <h3>Provider</h3>
+                        <p class="sub-text">State Management</p>
+                    </div>
+                    <div class="neumorphic-card">
+                        <h3>Packages</h3>
+                        <p class="sub-text">go_router, flutter_animate</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <h2>User Roles</h2>
+                <div class="grid-container" style="max-width: 900px;">
+                    <div class="neumorphic-card"><i class="fas fa-user-graduate"></i>
+                        <h3>Student</h3>
+                    </div>
+                    <div class="neumorphic-card"><i class="fas fa-chalkboard-teacher"></i>
+                        <h3>Teacher</h3>
+                    </div>
+                    <div class="neumorphic-card"><i class="fas fa-user-shield"></i>
+                        <h3>Admin</h3>
+                    </div>
+                    <div class="neumorphic-card"><i class="fas fa-crown"></i>
+                        <h3>Super Admin</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide left-align">
+                <h2>Student Features</h2>
+                <ul>
+                    <li><i class="fas fa-tachometer-alt"></i> <strong>Dashboard:</strong> Stats & Scores.</li>
+                    <li><i class="fas fa-clock"></i> <strong>Attempt Quiz:</strong> Timed MCQs.</li>
+                    <li><i class="fas fa-history"></i> <strong>History:</strong> Past grades.</li>
+                </ul>
+            </div>
+
+            <div class="slide left-align">
+                <h2>Teacher Features</h2>
+                <ul>
+                    <li><i class="fas fa-plus-circle"></i> <strong>Create Quiz:</strong> Title, Time, Subject.</li>
+                    <li><i class="fas fa-list-ol"></i> <strong>Questions:</strong> Dynamic MCQs.</li>
+                    <li><i class="fas fa-chart-bar"></i> <strong>Results:</strong> Student tracking.</li>
+                </ul>
+            </div>
+
+            <div class="slide left-align">
+                <h2>Admin Features</h2>
+                <div class="grid-container">
+                    <div class="neumorphic-card">
+                        <h3>User Mgmt</h3>
+                        <p class="sub-text">Suspend/Approve</p>
+                    </div>
+                    <div class="neumorphic-card">
+                        <h3>Quiz Control</h3>
+                        <p class="sub-text">System-wide view</p>
+                    </div>
+                    <div class="neumorphic-card">
+                        <h3>Super Admin</h3>
+                        <p class="sub-text">Full Control</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <h2>Highlights</h2>
+                <ul style="max-width: 600px; margin: 0 auto;">
+                    <li
+                        style="background:var(--bg-color); padding:15px; border-radius:15px; box-shadow:5px 5px 10px var(--shadow-dark),-5px -5px 10px var(--shadow-light); margin-bottom:20px;">
+                        <i class="fab fa-android fa-2x"></i> <strong>Cross-Platform</strong>
+                    </li>
+                    <li
+                        style="background:var(--bg-color); padding:15px; border-radius:15px; box-shadow:5px 5px 10px var(--shadow-dark),-5px -5px 10px var(--shadow-light); margin-bottom:20px;">
+                        <i class="fas fa-bolt fa-2x"></i> <strong>Real-Time Updates</strong>
+                    </li>
+                    <li
+                        style="background:var(--bg-color); padding:15px; border-radius:15px; box-shadow:5px 5px 10px var(--shadow-dark),-5px -5px 10px var(--shadow-light);">
+                        <i class="fas fa-lock fa-2x"></i> <strong>Secure (Firebase)</strong>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="slide">
+                <div class="neumorphic-card" style="padding: 50px;">
+                    <i class="fas fa-check-circle" style="font-size: 3rem; color: #48bb78;"></i>
+                    <h2>Conclusion</h2>
+                    <p>EduSync delivers UX, Security, and Maintainability.</p>
+                    <h3 style="margin-top: 30px;">Thank You!</h3>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="changeSlide(-1)" title="Previous"><i class="fas fa-chevron-left"></i></button>
+            <button class="btn" onclick="changeSlide(1)" title="Next"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <div class="footer-info">EduSync Project | Zeeshan Sarfraz</div>
+    </div>
+
+    <script>
+        // --- Navigation Logic ---
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const counter = document.getElementById('counter');
+
+        function showSlide(index) {
+            slides.forEach((slide) => slide.classList.remove('active'));
+            if (index >= slides.length) currentSlide = 0;
+            if (index < 0) currentSlide = slides.length - 1;
+            slides[currentSlide].classList.add('active');
+            counter.innerText = `${currentSlide + 1} / ${slides.length}`;
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            showSlide(currentSlide);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+        showSlide(0);
+    </script>
+</body>
+
+</html>

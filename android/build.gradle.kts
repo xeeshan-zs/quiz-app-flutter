@@ -5,6 +5,14 @@ allprojects {
     }
 }
 
+// Define global properties for plugins that require them
+extra.apply {
+    set("compileSdkVersion", 36)
+    set("minSdkVersion", 23)
+    set("targetSdkVersion", 36)
+    set("ndkVersion", "27.0.12077973")
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
