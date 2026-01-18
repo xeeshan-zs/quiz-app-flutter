@@ -48,8 +48,9 @@ def remove_background_floodfill(input_path, tolerance=30):
         print(f"Error processing {input_path}: {e}")
 
 # Process favicon (usually small, corner transparency works)
-# remove_background_floodfill('web/favicon.png')
-# User requested to keep favicon as is.
+# Process favicon (usually small, corner transparency works)
+remove_background_floodfill('web/favicon.png')
+# User requested to fix white borders on favicon too.
 
 # Process Icon-192 
 # Note: If the white border is detached from the purple square, flood fill works perfect.
