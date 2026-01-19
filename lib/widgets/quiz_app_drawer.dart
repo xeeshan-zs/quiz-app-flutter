@@ -11,42 +11,80 @@ class QuizAppDrawer extends StatelessWidget {
   const QuizAppDrawer({super.key, required this.user});
 
   @override
+  @override
   Widget build(BuildContext context) {
-    if (user == null) return const SizedBox.shrink();
+    // Removed early return to allow drawer for guests
 
     return Drawer(
       child: Column(
         children: [
-          UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(
-               gradient: LinearGradient(
+          if (user != null)
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                 gradient: LinearGradient(
+                    colors: [Color(0xFF2E236C), Color(0xFF433D8B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+              ),
+              accountName: Text(user!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              accountEmail: Text(user!.email),
+              currentAccountPicture: InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/profile');
+                },
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  backgroundImage: user!.photoUrl != null && user!.photoUrl!.isNotEmpty
+                      ? NetworkImage(user!.photoUrl!)
+                      : null,
+                  child: user!.photoUrl == null || user!.photoUrl!.isEmpty
+                      ? Text(
+                          user!.name.substring(0, 1).toUpperCase(),
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2E236C)),
+                        )
+                      : null,
+                ),
+              ),
+            )
+          else
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   colors: [Color(0xFF2E236C), Color(0xFF433D8B)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-            ),
-            accountName: Text(user!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            accountEmail: Text(user!.email),
-            currentAccountPicture: InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/profile');
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                backgroundImage: user!.photoUrl != null && user!.photoUrl!.isNotEmpty
-                    ? NetworkImage(user!.photoUrl!)
-                    : null,
-                child: user!.photoUrl == null || user!.photoUrl!.isEmpty
-                    ? Text(
-                        user!.name.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2E236C)),
-                      )
-                    : null,
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.school_rounded, size: 48, color: Colors.white),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.go('/login');
+                        },
+                        icon: const Icon(Icons.login_rounded),
+                        label: const Text('Login'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF2E236C),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           
+          if (user != null)
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: const Text('My Profile'),
@@ -69,6 +107,7 @@ class QuizAppDrawer extends StatelessWidget {
             },
           ),
 
+          if (user != null)
           ListTile(
             leading: const Icon(Icons.dashboard_rounded),
             title: const Text('Dashboard'),
@@ -86,7 +125,7 @@ class QuizAppDrawer extends StatelessWidget {
             },
           ),
           
-          if (user!.role == UserRole.student)
+          if (user != null && user!.role == UserRole.student)
             ListTile(
               leading: const Icon(Icons.history_edu),
               title: const Text('History'),
@@ -98,7 +137,7 @@ class QuizAppDrawer extends StatelessWidget {
               },
             ),
 
-          if (user!.role == UserRole.teacher)
+          if (user != null && user!.role == UserRole.teacher)
             ListTile(
               leading: const Icon(Icons.add_circle_outline),
               title: const Text('Create New Quiz'),
@@ -110,7 +149,7 @@ class QuizAppDrawer extends StatelessWidget {
               },
             ),
 
-          if (user!.role == UserRole.admin || user!.role == UserRole.super_admin)
+          if (user != null && (user!.role == UserRole.admin || user!.role == UserRole.super_admin))
              ListTile(
               leading: const Icon(Icons.assignment),
               title: const Text('Quiz List'),
@@ -122,7 +161,16 @@ class QuizAppDrawer extends StatelessWidget {
               },
             ),
 
-
+          ListTile(
+            leading: const Icon(Icons.install_desktop, color: Colors.deepPurpleAccent),
+            title: const Text('Our App', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent)),
+            selected: GoRouterState.of(context).uri.path == '/our-app',
+            selectedColor: Colors.deepPurple,
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/our-app');
+            },
+          ),
 
           ListTile(
             leading: const Icon(Icons.help_outline),
@@ -134,16 +182,7 @@ class QuizAppDrawer extends StatelessWidget {
               context.push('/user-guide');
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.install_desktop, color: Colors.deepPurpleAccent),
-            title: const Text('Our App', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent)),
-            selected: GoRouterState.of(context).uri.path == '/our-app',
-            selectedColor: Colors.deepPurple,
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/our-app');
-            },
-          ),
+          
           ListTile(
             leading: const Icon(Icons.contact_support_outlined),
             title: const Text('Contact Us'),
@@ -165,16 +204,20 @@ class QuizAppDrawer extends StatelessWidget {
             },
           ),
           
-          const Spacer(),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.deepPurple),
-            title: const Text('Logout', style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
-            onTap: () {
-               context.read<UserProvider>().logout();
-            },
-          ),
-          const SizedBox(height: 20),
+          if (user != null) ...[
+            const Spacer(),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.deepPurple),
+              title: const Text('Logout', style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+              onTap: () {
+                 context.read<UserProvider>().logout();
+              },
+            ),
+            const SizedBox(height: 20),
+          ] else ...[
+             const Spacer(),
+          ]
         ],
       ),
     );
