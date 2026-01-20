@@ -64,11 +64,29 @@ class _AllQuizzesScreenState extends State<AllQuizzesScreen> {
       if (mounted) setState(() => _isLoading = true);
     }
 
+    String? filterAdminId;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final currentUser = userProvider.user;
+
+    if (currentUser != null) {
+      if (currentUser.role == UserRole.admin) {
+        // Admin: Only see MY quizzes (and my teachers')
+        filterAdminId = currentUser.uid;
+      } else if (currentUser.role == UserRole.super_admin) {
+        // Super Admin: See ALL (pass null), or support future filtering
+        filterAdminId = null; 
+      } else {
+        // Teacher/Student: See quizzes for my assigned Admin
+        filterAdminId = currentUser.adminId;
+      }
+    }
+
     try {
       final newQuizzes = await _firestoreService.getQuizzesPaginated(
         limit: 20,
         lastDocument: _lastDocument,
         searchQuery: _searchQuery,
+        adminId: filterAdminId, // Apply Filter
       );
 
       DocumentSnapshot? newLastDoc;
