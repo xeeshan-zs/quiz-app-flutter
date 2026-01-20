@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import '../services/cloudinary_service.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 import '../providers/user_provider.dart';
@@ -41,6 +43,8 @@ class _EditUserDialogState extends State<EditUserDialog> {
   bool _isLoadingAdmins = false;
 
   bool _isSubmitting = false;
+  bool _isUploadingImage = false;
+  String? _currentPhotoUrl;
   final _firestoreService = FirestoreService();
 
   @override
@@ -56,6 +60,8 @@ class _EditUserDialogState extends State<EditUserDialog> {
     
     // Enabled classes for Admin/Teacher
     _enabledClasses = List<String>.from(widget.user.metadata['subscribedClasses'] ?? []);
+    
+    _currentPhotoUrl = widget.user.photoUrl;
 
     _initializeAdminAndClasses();
   }
@@ -189,6 +195,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
         widget.user.uid,
         name: _nameController.text.trim(),
         email: _contactEmailController.text.trim(), // Display email only
+        photoUrl: _currentPhotoUrl, // Update photo
         role: _selectedRole,
         metadata: newMetadata,
         // Update Admin ID if changed (Super Admin only trigger basically, or if role changed logic?)
@@ -230,6 +237,33 @@ class _EditUserDialogState extends State<EditUserDialog> {
     }
   }
 
+  Future<void> _pickAndUploadImage() async {
+     try {
+       final ImagePicker picker = ImagePicker();
+       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+       
+       if (image != null) {
+          setState(() => _isUploadingImage = true);
+          final String? url = await CloudinaryService().uploadImage(image);
+          
+          if (mounted) {
+             setState(() {
+               _isUploadingImage = false;
+               if (url != null) _currentPhotoUrl = url;
+             });
+          }
+       }
+     } catch (e) {
+        print('Image pick error: $e');
+        if (mounted) setState(() => _isUploadingImage = false);
+     }
+  }
+
+  void _removeImage() {
+     // Use empty string to signal deletion to FirestoreService (which ignores nulls)
+     setState(() => _currentPhotoUrl = "");
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = context.read<UserProvider>();
@@ -265,6 +299,56 @@ class _EditUserDialogState extends State<EditUserDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // --- Profile Picture Section ---
+                Center(
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 100, height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[200],
+                          border: Border.all(color: Colors.white, width: 4),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))
+                          ],
+                        ),
+                        child: _isUploadingImage
+                          ? const CircularProgressIndicator()
+                          : ClipOval(
+                              child: _currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty
+                                ? Image.network(_currentPhotoUrl!, fit: BoxFit.cover, errorBuilder: (c,o,s) => const Icon(Icons.person, size: 50, color: Colors.grey))
+                                : const Icon(Icons.person, size: 50, color: Colors.grey),
+                            ),
+                      ),
+                      Positioned(
+                        bottom: 0, right: 0,
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Theme.of(context).primaryColor,
+                          child: IconButton(
+                            icon: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                            onPressed: _pickAndUploadImage,
+                          ),
+                        ),
+                      ),
+                      if (_currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty)
+                        Positioned(
+                          top: 0, right: 0,
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.red,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, size: 18, color: Colors.white),
+                              onPressed: _removeImage,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person)),

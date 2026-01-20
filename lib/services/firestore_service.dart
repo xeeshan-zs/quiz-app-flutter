@@ -187,24 +187,26 @@ class FirestoreService {
   }
 
   Future<void> updateUser(
-  String uid, {
-  String? name,
-  String? email,
-  UserRole? role,
-  Map<String, dynamic>? metadata,
-  String? adminId, // Added support for admin reassignment
-}) async {
-  final updates = <String, dynamic>{};
-  if (name != null) updates['name'] = name;
-  if (email != null) updates['email'] = email;
-  if (role != null) updates['role'] = role.name;
-  if (metadata != null) updates['metadata'] = metadata;
-  if (adminId != null) updates['adminId'] = adminId;
-  
-  if (updates.isNotEmpty) {
-    await _db.collection('users').doc(uid).update(updates);
+    String uid, {
+    String? name,
+    String? email,
+    String? photoUrl, // Added photoUrl
+    UserRole? role,
+    Map<String, dynamic>? metadata,
+    String? adminId, 
+  }) async {
+    final updates = <String, dynamic>{};
+    if (name != null) updates['name'] = name;
+    if (email != null) updates['email'] = email;
+    if (photoUrl != null) updates['photoUrl'] = photoUrl; // Add to updates
+    if (role != null) updates['role'] = role.name;
+    if (metadata != null) updates['metadata'] = metadata;
+    if (adminId != null) updates['adminId'] = adminId;
+    
+    if (updates.isNotEmpty) {
+      await _db.collection('users').doc(uid).update(updates);
+    }
   }
-}
   
   Future<void> createUser(UserModel user, String password) async {
      // Saves user with adminId and createdBy

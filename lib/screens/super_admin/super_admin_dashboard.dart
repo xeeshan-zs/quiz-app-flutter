@@ -450,181 +450,126 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   Widget _buildUserCard(BuildContext context, UserModel u, FirestoreService firestoreService, UserModel? text) {
-      // ignore: unused_local_variable
       final isSelf = u.uid == text?.uid;
-      final isSmallScreen = MediaQuery.of(context).size.width <= 600;
       // Clickable if we are at root level (not drilled down) AND the row is an Admin
       final isClickable = _selectedAdmin == null && u.role == UserRole.admin;
 
       return Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4), // Added some horizontal margin for shadow visibility and vertical spacing
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
-             BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(4, 8)),
+             BoxShadow(
+               color: Colors.grey.withOpacity(0.1),
+               blurRadius: 10,
+               offset: const Offset(0, 4),
+               spreadRadius: 1,
+             ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            // On tap, if it's an admin, drill down.
             onTap: isClickable ? () => _selectAdmin(u) : null,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: isSmallScreen
-                  ? Column(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Balanced padding
+              child: Row(
+                children: [
+                  // Left: Avatar
+                  Container(
+                      width: 48, height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFEEEE),
+                        shape: BoxShape.circle,
+                        boxShadow: const [
+                            BoxShadow(color: Colors.white, offset: Offset(-2, -2), blurRadius: 4),
+                            BoxShadow(color: Color(0xFFA7A9AF), offset: Offset(2, 2), blurRadius: 4),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: u.photoUrl != null && u.photoUrl!.isNotEmpty
+                          ? Image.network(u.photoUrl!, fit: BoxFit.cover, 
+                              errorBuilder: (c, o, s) => Icon(Icons.person, color: _getRoleColor(u.role)))
+                          : Icon(Icons.person, color: _getRoleColor(u.role)),
+                      ),
+                  ),
+                  const SizedBox(width: 16),
+                  
+                  // Middle: Info
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Mobile Header
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
-                              child: Icon(Icons.person, color: _getRoleColor(u.role)),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(u.name + (isSelf ? ' (You)' : ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  const SizedBox(height: 4),
-                                  Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Mobile Info Badges
-                        Row(
-                          children: [
-                            _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
-                            const SizedBox(width: 8),
-                            _buildStatusBadge(u.isDisabled ? 'DISABLED' : 'ACTIVE', u.isDisabled ? Colors.red : Colors.green),
-                            if (isClickable) ...[
-                                const Spacer(),
-                                OutlinedButton.icon(
-                                    onPressed: () => _selectAdmin(u),
-                                    icon: const Icon(Icons.groups, size: 16),
-                                    label: const Text('Users', style: TextStyle(fontSize: 12)),
-                                    style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                ),
-                            ]
-                          ],
-                        ),
-                         const SizedBox(height: 12),
-                        
-                        // Mobile Actions
                          Row(
-                           mainAxisAlignment: MainAxisAlignment.end,
                            children: [
-                             Switch(
-                               value: !u.isDisabled, 
-                               activeColor: Colors.green,
-                               onChanged: isSelf ? null : (val) => _toggleUserStatus(u, firestoreService),
-                             ),
-                             IconButton(
-                               icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent),
-                               onPressed: () => showDialog(
-                                 context: context,
-                                 builder: (c) => EditUserDialog(user: u),
+                             Flexible(
+                               child: Text(
+                                 u.name + (isSelf ? ' (You)' : ''), 
+                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                                 overflow: TextOverflow.ellipsis,
                                ),
                              ),
-                             if (!isSelf)
-                               IconButton(
-                                 icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                                 onPressed: () => _confirmDeleteUser(context, u, firestoreService),
-                               ),
+                             const SizedBox(width: 8),
+                             _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
                            ],
-                         )
-                      ],
-                    )
-                  : Row(
-                      // Desktop Layout
-                      children: [
-                        Container(
-                          width: 48, height: 48,
-                          decoration: BoxDecoration(
-                            color: _getRoleColor(u.role).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(Icons.person_rounded, color: _getRoleColor(u.role), size: 24),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(u.name + (isSelf ? ' (You)' : ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              const SizedBox(height: 4),
-                              Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                        
-                        // Enhanced Desktop "View Users" Button
-                        if (isClickable) 
-                           Padding(
-                             padding: const EdgeInsets.only(right: 24.0),
-                             child: FilledButton.tonalIcon(
-                               onPressed: () => _selectAdmin(u),
-                               icon: const Icon(Icons.groups, size: 18),
-                               label: const Text('Manage Users'),
-                               style: FilledButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                               ),
-                             ),
-                           ),
-                        
-                        // Status & Actions
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              children: [
-                                _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
-                                const SizedBox(width: 8),
-                                _buildStatusBadge(u.isDisabled ? 'DISABLED' : 'ACTIVE', u.isDisabled ? Colors.red : Colors.green),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                 Switch(
-                                  value: !u.isDisabled, 
-                                  activeColor: Colors.green,
-                                  onChanged: isSelf ? null : (val) => _toggleUserStatus(u, firestoreService),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent),
-                                  tooltip: 'Edit Details',
-                                  onPressed: () => showDialog(
-                                    context: context,
-                                    builder: (c) => EditUserDialog(user: u),
-                                  ),
-                                ),
-                                if (!isSelf)
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                                    tooltip: 'Delete User',
-                                    onPressed: () => _confirmDeleteUser(context, u, firestoreService),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        )
+                         ),
+                         const SizedBox(height: 4),
+                         Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis),
                       ],
                     ),
+                  ),
+
+                  // Right: Actions
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                       if (isClickable) ...[
+                          IconButton(
+                            icon: const Icon(Icons.groups, color: Colors.deepPurple, size: 20),
+                            tooltip: 'Manage Users',
+                            splashRadius: 20,
+                            onPressed: () => _selectAdmin(u),
+                          ),
+                          const SizedBox(width: 8),
+                       ],
+                       
+                       Switch(
+                          value: !u.isDisabled, 
+                          activeColor: Colors.green,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          onChanged: isSelf ? null : (val) => _toggleUserStatus(u, firestoreService),
+                       ),
+                       const SizedBox(width: 8),
+                       
+                       IconButton(
+                         icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent, size: 20),
+                         tooltip: 'Edit',
+                         splashRadius: 20,
+                         constraints: const BoxConstraints(),
+                         padding: EdgeInsets.zero,
+                         onPressed: () => showDialog(
+                           context: context,
+                           builder: (c) => EditUserDialog(user: u),
+                         ),
+                       ),
+                       const SizedBox(width: 12),
+                       
+                       if (!isSelf)
+                         IconButton(
+                           icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                           tooltip: 'Delete',
+                           splashRadius: 20,
+                           constraints: const BoxConstraints(),
+                           padding: EdgeInsets.zero,
+                           onPressed: () => _confirmDeleteUser(context, u, firestoreService),
+                         ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
