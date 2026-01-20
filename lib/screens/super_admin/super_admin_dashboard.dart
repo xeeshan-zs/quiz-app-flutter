@@ -9,6 +9,7 @@ import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/quiz_app_bar.dart';
 import '../../widgets/quiz_app_drawer.dart';
+import '../../widgets/edit_user_dialog.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   const SuperAdminDashboard({super.key});
@@ -18,11 +19,11 @@ class SuperAdminDashboard extends StatefulWidget {
 }
 
 class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
-  String _searchQuery = '';
-  // Removed sort index for now as server-side sort is complex with other filters
-  // int? _sortColumnIndex; 
-  // bool _sortAscending = true;
+  // State for Hierarchy
+  UserModel? _selectedAdmin; // If null, showing my Admins. If set, showing that Admin's users.
   
+  // Search & Filter State
+  String _searchQuery = '';
   String _selectedRoleFilter = 'All';
 
   // Pagination State
@@ -32,7 +33,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   DocumentSnapshot? _lastDocument;
   final ScrollController _scrollController = ScrollController();
   
-  // Stats (Optional: fetch separately if needed, for now just what we have)
+  // Stats
   int _totalLoaded = 0;
 
   @override
@@ -71,18 +72,34 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     }
 
     try {
-      final newUsers = await FirestoreService().getUsersPaginated(
-        limit: 20,
-        lastDocument: _lastDocument,
-        roleFilter: _selectedRoleFilter,
-        searchQuery: _searchQuery,
-      );
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final myUid = userProvider.user?.uid;
+      
+      List<UserModel> newUsers = [];
+      
+      if (_selectedAdmin == null) {
+          // MODE 1: Show ALL Admins (Global)
+          // Removed createdBy filter so Super Admin sees everyone
+          newUsers = await FirestoreService().getUsersPaginated(
+            limit: 20,
+            lastDocument: _lastDocument,
+            roleFilter: 'admin', 
+            // createdBy: myUid, // REMOVED to show all admins
+            searchQuery: _searchQuery,
+          );
+      } else {
+          // MODE 2: Show Users BELONGING to the selected Admin (Silo)
+          newUsers = await FirestoreService().getUsersPaginated(
+            limit: 20,
+            lastDocument: _lastDocument,
+            roleFilter: _selectedRoleFilter == 'All' ? null : _selectedRoleFilter,
+            adminId: _selectedAdmin!.uid, // SHOW SILO
+            searchQuery: _searchQuery,
+          );
+      }
 
       DocumentSnapshot? newLastDoc;
       if (newUsers.isNotEmpty) {
-        // Optimization: In a real world scenario, you'd get the snapshot directly from the pagination service.
-        // For now, to satisfy the signature and logic without rewriting everything, we fetch it.
-        // But await cannot be in setState.
         newLastDoc = await FirestoreService().getUserDoc(newUsers.last.uid);
       }
 
@@ -111,8 +128,24 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   void _onSearchChanged(String val) {
-    // Basic debounce could be added here
     setState(() => _searchQuery = val);
+    _fetchUsers(refresh: true);
+  }
+  
+  void _selectAdmin(UserModel admin) {
+    setState(() {
+      _selectedAdmin = admin;
+      _searchQuery = ''; // Reset search for new context
+      _selectedRoleFilter = 'All'; // Reset filter
+    });
+    _fetchUsers(refresh: true);
+  }
+  
+  void _clearSelection() {
+    setState(() {
+      _selectedAdmin = null;
+      _searchQuery = '';
+    });
     _fetchUsers(refresh: true);
   }
 
@@ -300,9 +333,29 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.table_chart_outlined, size: 28),
+                        if (_selectedAdmin != null)
+                          IconButton.filledTonal(
+                            icon: const Icon(Icons.arrow_back),
+                            onPressed: _clearSelection,
+                            tooltip: 'Back to Admins',
+                          ),
+                        if (_selectedAdmin != null) const SizedBox(width: 12),
+                        Icon(_selectedAdmin == null ? Icons.admin_panel_settings : Icons.people_alt, size: 28),
                         const SizedBox(width: 12),
-                        Text('Master User List', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedAdmin == null ? 'My Admins' : '${_selectedAdmin!.name}\'s Users', 
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)
+                            ),
+                            if (_selectedAdmin != null)
+                               Text(
+                                  'Managing users for ${_selectedAdmin!.email}', 
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey)
+                               ),
+                          ],
+                        ),
                       ],
                     ),
                     
@@ -311,7 +364,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         runSpacing: 12,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          // Role Filter
+                          // Role Filter (Only show when drilling down, otherwise we only see Admins)
+                          if (_selectedAdmin != null)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
@@ -321,10 +375,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedRoleFilter,
-                                items: ['All', 'Student', 'Teacher', 'Admin', 'Super_admin']
+                                items: ['All', 'Student', 'Teacher'] // Constrain choices
                                     .map((role) => DropdownMenuItem(
                                           value: role,
-                                          child: Text(role.replaceAll('_', ' ').toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                          child: Text(role.toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                         ))
                                     .toList(),
                                 onChanged: (val) => _onFilterChanged(val!),
@@ -335,6 +389,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           Container(
                             constraints: const BoxConstraints(maxWidth: 250),
                               child: TextField(
+                                controller: TextEditingController(text: _searchQuery), // Sync text
                                 onChanged: (v) => _onSearchChanged(v),
                                 decoration: InputDecoration(
                                   hintText: 'Search Name...',
@@ -355,10 +410,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
             // User List (Cards)
             if (_users.isEmpty && !_isLoading)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: Center(child: Text('No users found.')),
+                  padding: const EdgeInsets.all(40),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.folder_open, size: 48, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        Text(_selectedAdmin == null ? 'No Admins found.\nAdd one to get started.' : 'This Admin has no users yet.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[500])),
+                      ],
+                    ),
+                  ),
                 ),
               )
             else
@@ -373,199 +437,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                            : const SizedBox(height: 40);
                       }
 
-                      final u = _users[index];
-                      final isSelf = u.uid == user?.uid;
-                      final isSmallScreen = MediaQuery.of(context).size.width <= 600;
-
-                      return Card(
-                        elevation: 0,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: isSmallScreen
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Mobile Header
-                                    Row(
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 20,
-                                          backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
-                                          child: Icon(Icons.person, color: _getRoleColor(u.role)),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(u.name + (isSelf ? ' (You)' : ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                              const SizedBox(height: 4),
-                                              Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                                              const SizedBox(height: 4),
-                                              Text('UID: ${u.uid.substring(0, 8)}', style: const TextStyle(color: Colors.grey, fontSize: 11, fontFamily: 'monospace')),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const Divider(),
-                                    const SizedBox(height: 8),
-                                    // Mobile Actions
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: _getRoleColor(u.role).withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(u.role.name.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getRoleColor(u.role))),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: u.isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(u.isDisabled ? 'Disabled' : 'Active', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: u.isDisabled ? Colors.red : Colors.green)),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            Switch(
-                                              value: !u.isDisabled, 
-                                              activeColor: Colors.green,
-                                              onChanged: isSelf ? null : (val) async {
-                                                  try {
-                                                    await firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        final index = _users.indexWhere((user) => user.uid == u.uid);
-                                                        if (index != -1) {
-                                                          _users[index] = _users[index].copyWith(isDisabled: !u.isDisabled);
-                                                        }
-                                                      });
-                                                    }
-                                                  } catch (e) {
-                                                     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                                                  }
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
-                                              tooltip: 'Details',
-                                              onPressed: () => _showUserDetails(context, u),
-                                            ),
-                                            if (!isSelf)
-                                              IconButton(
-                                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                                // Tooltip removed to prevent '_debugDuringDeviceUpdate' assertion
-                                                onPressed: () => _confirmDeleteUser(context, u, firestoreService),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                )
-                              : Row(
-                                  // Desktop Layout
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 20,
-                                      backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
-                                      child: Icon(Icons.person, color: _getRoleColor(u.role)),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(u.name + (isSelf ? ' (You)' : ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                          const SizedBox(height: 4),
-                                          Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                                          const SizedBox(height: 4),
-                                          Text('UID: ${u.uid.substring(0, 8)}', style: const TextStyle(color: Colors.grey, fontSize: 11, fontFamily: 'monospace')),
-                                        ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: _getRoleColor(u.role).withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(u.role.name.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getRoleColor(u.role))),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: u.isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(u.isDisabled ? 'Disabled' : 'Active', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: u.isDisabled ? Colors.red : Colors.green)),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                             Switch(
-                                              value: !u.isDisabled, 
-                                              activeColor: Colors.green,
-                                              onChanged: isSelf ? null : (val) async {
-                                                  try {
-                                                    await firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        final index = _users.indexWhere((user) => user.uid == u.uid);
-                                                        if (index != -1) {
-                                                          _users[index] = _users[index].copyWith(isDisabled: !u.isDisabled);
-                                                        }
-                                                      });
-                                                    }
-                                                  } catch (e) {
-                                                     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                                                  }
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
-                                              tooltip: 'Details',
-                                              onPressed: () => _showUserDetails(context, u),
-                                            ),
-                                            if (!isSelf)
-                                              IconButton(
-                                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                                // Tooltip removed to prevent '_debugDuringDeviceUpdate' assertion
-                                                onPressed: () => _confirmDeleteUser(context, u, firestoreService),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                        ),
-                      );
+                      return _buildUserCard(context, _users[index], firestoreService, user);
                     },
                     childCount: _users.length + 1, // +1 for loader
                   ),
@@ -575,6 +447,215 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         ),
       ),
     );
+  }
+
+  Widget _buildUserCard(BuildContext context, UserModel u, FirestoreService firestoreService, UserModel? text) {
+      // ignore: unused_local_variable
+      final isSelf = u.uid == text?.uid;
+      final isSmallScreen = MediaQuery.of(context).size.width <= 600;
+      // Clickable if we are at root level (not drilled down) AND the row is an Admin
+      final isClickable = _selectedAdmin == null && u.role == UserRole.admin;
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+             BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(4, 8)),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            // On tap, if it's an admin, drill down.
+            onTap: isClickable ? () => _selectAdmin(u) : null,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: isSmallScreen
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Mobile Header
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
+                              child: Icon(Icons.person, color: _getRoleColor(u.role)),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(u.name + (isSelf ? ' (You)' : ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  const SizedBox(height: 4),
+                                  Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Mobile Info Badges
+                        Row(
+                          children: [
+                            _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
+                            const SizedBox(width: 8),
+                            _buildStatusBadge(u.isDisabled ? 'DISABLED' : 'ACTIVE', u.isDisabled ? Colors.red : Colors.green),
+                            if (isClickable) ...[
+                                const Spacer(),
+                                OutlinedButton.icon(
+                                    onPressed: () => _selectAdmin(u),
+                                    icon: const Icon(Icons.groups, size: 16),
+                                    label: const Text('Users', style: TextStyle(fontSize: 12)),
+                                    style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                ),
+                            ]
+                          ],
+                        ),
+                         const SizedBox(height: 12),
+                        
+                        // Mobile Actions
+                         Row(
+                           mainAxisAlignment: MainAxisAlignment.end,
+                           children: [
+                             Switch(
+                               value: !u.isDisabled, 
+                               activeColor: Colors.green,
+                               onChanged: isSelf ? null : (val) => _toggleUserStatus(u, firestoreService),
+                             ),
+                             IconButton(
+                               icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent),
+                               onPressed: () => showDialog(
+                                 context: context,
+                                 builder: (c) => EditUserDialog(user: u),
+                               ),
+                             ),
+                             if (!isSelf)
+                               IconButton(
+                                 icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                 onPressed: () => _confirmDeleteUser(context, u, firestoreService),
+                               ),
+                           ],
+                         )
+                      ],
+                    )
+                  : Row(
+                      // Desktop Layout
+                      children: [
+                        Container(
+                          width: 48, height: 48,
+                          decoration: BoxDecoration(
+                            color: _getRoleColor(u.role).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(Icons.person_rounded, color: _getRoleColor(u.role), size: 24),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(u.name + (isSelf ? ' (You)' : ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              const SizedBox(height: 4),
+                              Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        
+                        // Enhanced Desktop "View Users" Button
+                        if (isClickable) 
+                           Padding(
+                             padding: const EdgeInsets.only(right: 24.0),
+                             child: FilledButton.tonalIcon(
+                               onPressed: () => _selectAdmin(u),
+                               icon: const Icon(Icons.groups, size: 18),
+                               label: const Text('Manage Users'),
+                               style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                               ),
+                             ),
+                           ),
+                        
+                        // Status & Actions
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              children: [
+                                _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
+                                const SizedBox(width: 8),
+                                _buildStatusBadge(u.isDisabled ? 'DISABLED' : 'ACTIVE', u.isDisabled ? Colors.red : Colors.green),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                 Switch(
+                                  value: !u.isDisabled, 
+                                  activeColor: Colors.green,
+                                  onChanged: isSelf ? null : (val) => _toggleUserStatus(u, firestoreService),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent),
+                                  tooltip: 'Edit Details',
+                                  onPressed: () => showDialog(
+                                    context: context,
+                                    builder: (c) => EditUserDialog(user: u),
+                                  ),
+                                ),
+                                if (!isSelf)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                    tooltip: 'Delete User',
+                                    onPressed: () => _confirmDeleteUser(context, u, firestoreService),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      );
+  }
+
+  Widget _buildStatusBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+    );
+  }
+
+  Future<void> _toggleUserStatus(UserModel u, FirestoreService firestoreService) async {
+      try {
+        await firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+        if (mounted) {
+          setState(() {
+            final index = _users.indexWhere((user) => user.uid == u.uid);
+            if (index != -1) {
+              _users[index] = _users[index].copyWith(isDisabled: !u.isDisabled);
+            }
+          });
+        }
+      } catch (e) {
+         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
   }
 
   Color _getRoleColor(UserRole role) {
@@ -688,12 +769,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   void _showCreateUserDialog(BuildContext context) {
-      showDialog(context: context, builder: (context) => const _CreateUserDialog());
+      // Pass the currently selected admin (if any) to the dialog as a pre-selection
+      showDialog(
+        context: context, 
+        builder: (context) => _CreateUserDialog(preselectedAdmin: _selectedAdmin)
+      );
   }
 }
 
 class _CreateUserDialog extends StatefulWidget {
-  const _CreateUserDialog();
+  final UserModel? preselectedAdmin;
+  const _CreateUserDialog({this.preselectedAdmin});
 
   @override
   State<_CreateUserDialog> createState() => _CreateUserDialogState();
@@ -702,14 +788,66 @@ class _CreateUserDialog extends StatefulWidget {
 class _CreateUserDialogState extends State<_CreateUserDialog> {
     final _formKey = GlobalKey<FormState>();
     final _emailController = TextEditingController();
-    final _passwordController = TextEditingController(); // Added
+    final _passwordController = TextEditingController();
     final _nameController = TextEditingController();
     UserRole _selectedRole = UserRole.student;
     
+    // Admin Selection
+    List<UserModel> _availableAdmins = [];
+    UserModel? _selectedAdmin;
+    bool _isLoadingAdmins = false;
+
+    // Student fields
     final _rollNoController = TextEditingController();
-    final _classController = TextEditingController(); 
+    // Replaced _classController with Dropdown logic
+    List<String> _availableClasses = [];
+    String? _selectedClass;
     
     bool _isSubmitting = false;
+
+    @override
+    void initState() {
+      super.initState();
+      _selectedAdmin = widget.preselectedAdmin;
+      _loadAdmins();
+      _loadClasses();
+    }
+
+    Future<void> _loadAdmins() async {
+      setState(() => _isLoadingAdmins = true);
+      try {
+        final admins = await FirestoreService().getUsersPaginated(
+          limit: 100, roleFilter: 'admin',
+        );
+        if (mounted) {
+          setState(() {
+            _availableAdmins = admins;
+            // Ensure pre-selected admin is in the list
+            if (_selectedAdmin != null && _availableAdmins.indexWhere((a) => a.uid == _selectedAdmin!.uid) == -1) {
+               _availableAdmins.add(_selectedAdmin!);
+            }
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading admins: $e');
+      } finally {
+        if (mounted) setState(() => _isLoadingAdmins = false);
+      }
+    }
+
+    void _loadClasses() {
+       setState(() {
+          if (_selectedAdmin != null) {
+             _availableClasses = _selectedAdmin!.subscribedClasses;
+          } else {
+             _availableClasses = [];
+          }
+          // Reset selection if it's no longer valid, or just reset to force user choice
+          if (_selectedClass != null && !_availableClasses.contains(_selectedClass)) {
+             _selectedClass = null;
+          }
+       });
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -757,18 +895,65 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
                               DropdownButtonFormField<UserRole>(
                                   value: _selectedRole,
                                   items: UserRole.values
-                                      .where((role) => role != UserRole.unknown)
+                                      .where((role) => role != UserRole.unknown && role != UserRole.super_admin)
                                       .map((role) => DropdownMenuItem(
                                       value: role,
                                       child: Text(role.name.toUpperCase()),
                                   )).toList(),
-                                  onChanged: (val) => setState(() => _selectedRole = val!),
+                                  onChanged: (val) {
+                                      setState(() {
+                                          _selectedRole = val!;
+                                          // Logic to clear/restore admin selection
+                                          if (_selectedRole == UserRole.admin) {
+                                              _selectedAdmin = null;
+                                              _loadClasses(); 
+                                          } else if (_selectedAdmin == null && widget.preselectedAdmin != null) {
+                                              _selectedAdmin = widget.preselectedAdmin;
+                                              _loadClasses();
+                                          }
+                                      });
+                                  },
                                   decoration: InputDecoration(
                                     labelText: 'Role', 
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                     prefixIcon: const Icon(Icons.shield_outlined),
                                   ),
                               ),
+
+                              // Admin Selection Dropdown (Only for Non-Admins)
+                              if (_selectedRole != UserRole.admin) ...[
+                                  const SizedBox(height: 16),
+                                  _isLoadingAdmins 
+                                    ? const LinearProgressIndicator()
+                                    : DropdownButtonFormField<UserModel>(
+                                        value: _selectedAdmin != null && _availableAdmins.indexWhere((a) => a.uid == _selectedAdmin!.uid) != -1
+                                            ? _availableAdmins.firstWhere((a) => a.uid == _selectedAdmin!.uid) 
+                                            : null,
+                                        items: _availableAdmins.map((admin) => DropdownMenuItem(
+                                          value: admin,
+                                          child: Text('${admin.name} (${admin.email})', overflow: TextOverflow.ellipsis),
+                                        )).toList(),
+                                        onChanged: (val) {
+                                           setState(() {
+                                              _selectedAdmin = val;
+                                              _loadClasses();
+                                           });
+                                        },
+                                        decoration: InputDecoration(
+                                          labelText: 'Assign to Admin',
+                                          helperText: 'Select the Admin who manages this user.',
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                          prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
+                                        ),
+                                        validator: (val) {
+                                           if (_selectedRole != UserRole.admin && val == null) {
+                                              return 'Please select an Admin';
+                                           }
+                                           return null;
+                                        },
+                                      ),
+                              ],
+
                               if (_selectedRole == UserRole.student) ...[
                                   const SizedBox(height: 16),
                                   TextFormField(
@@ -780,84 +965,102 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
                                       ),
                                   ),
                                   const SizedBox(height: 16),
-                                  TextFormField(
-                                      controller: _classController,
+                                  
+                                  // Class Dropdown
+                                  DropdownButtonFormField<String>(
+                                      value: _selectedClass,
+                                      items: _availableClasses.map((c) => DropdownMenuItem(
+                                          value: c, 
+                                          child: Text(c)
+                                      )).toList(),
+                                      onChanged: (val) => setState(() => _selectedClass = val),
                                       decoration: InputDecoration(
-                                        labelText: 'Class (e.g. BSCS-4B)', 
+                                        labelText: 'Class',
+                                        helperText: _availableClasses.isEmpty 
+                                          ? (_selectedAdmin == null ? 'Select an Admin first' : 'No classes found for this Admin') 
+                                          : null,
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                         prefixIcon: const Icon(Icons.class_outlined),
                                       ),
+                                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                                   ),
-                              ],
+                              ]
                           ],
-                      ),
-                  ),
+                      )
+                  )
               ),
             ),
             actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                 FilledButton(
-                    onPressed: _isSubmitting ? null : () async {
-                        if (!_formKey.currentState!.validate()) return;
-                        setState(() => _isSubmitting = true);
-                        
-                        try {
-                           // 0. Check for Duplicates
-                           final firestore = FirestoreService();
-                           final emailExists = await firestore.checkEmailExists(_emailController.text);
-                           if (emailExists) {
-                             if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Email already exists.')));
-                             setState(() => _isSubmitting = false);
-                             return;
-                           }
-
-                           if (_selectedRole == UserRole.student && _rollNoController.text.isNotEmpty) {
-                              final rollExists = await firestore.checkRollNumberExists(_rollNoController.text);
-                              if (rollExists) {
-                                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Roll Number already exists.')));
-                                setState(() => _isSubmitting = false);
-                                return;
-                              }
-                           }
-
-                           // 1. Create User in Auth to get UID
-                           final uid = await AuthService().createUserByAdmin(
-                             _emailController.text, 
-                             _passwordController.text
-                           );
-                        
-                           final metadata = <String, dynamic>{};
-                           if (_selectedRole == UserRole.student) {
-                               metadata['rollNumber'] = _rollNoController.text;
-                               metadata['className'] = _classController.text;
-                           }
-                           
-                           final newUser = UserModel(
-                               uid: uid,
-                               email: _emailController.text,
-                               name: _nameController.text,
-                               role: _selectedRole,
-                               metadata: metadata,
-                           );
-                        
-                           // 2. Create User Document
-                           await FirestoreService().createUser(newUser, "pw");
-                           
-                           if (mounted) {
-                               Navigator.pop(context);
-                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User record created')));
-                           }
-                        } catch (e) {
-                             if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                             }
-                        } finally {
-                            if (mounted) setState(() => _isSubmitting = false);
-                        }
-                    },
-                    child: const Text('Create User'),
+                    onPressed: _isSubmitting ? null : _submit,
+                    child: _isSubmitting 
+                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                     : const Text('Create User'),
                 ),
             ],
         );
+    }
+
+    Future<void> _submit() async {
+        if (!_formKey.currentState!.validate()) return;
+        setState(() => _isSubmitting = true);
+        
+        try {
+            final firestore = FirestoreService();
+            // 0. Check for Duplicates
+            final emailExists = await firestore.checkEmailExists(_emailController.text.trim());
+            if (emailExists) {
+               if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Email already exists.')));
+               setState(() => _isSubmitting = false);
+               return;
+            }
+
+            if (_selectedRole == UserRole.student && _rollNoController.text.isNotEmpty) {
+               final rollExists = await firestore.checkRollNumberExists(_rollNoController.text.trim());
+               if (rollExists) {
+                 if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Roll Number already exists.')));
+                 setState(() => _isSubmitting = false);
+                 return;
+               }
+            }
+
+            // 1. Create in Firebase Auth (Secondary App)
+            final newUid = await AuthService().createUserByAdmin(
+                _emailController.text.trim(), 
+                _passwordController.text.trim()
+            );
+
+            final currentUser = context.read<UserProvider>().user;
+            final metadata = <String, dynamic>{};
+            
+            if (_selectedRole == UserRole.student) {
+                if (_rollNoController.text.isNotEmpty) metadata['rollNumber'] = _rollNoController.text.trim();
+                // Use selected class
+                if (_selectedClass != null) metadata['classLevel'] = _selectedClass;
+            }
+
+            final newUser = UserModel(
+                uid: newUid,
+                email: _emailController.text.trim(),
+                name: _nameController.text.trim(),
+                role: _selectedRole,
+                createdBy: currentUser?.uid,
+                adminId: (_selectedRole == UserRole.admin) ? currentUser?.uid : _selectedAdmin?.uid, 
+                metadata: metadata,
+            );
+
+            // 2. Create in Firestore
+            await firestore.createUser(newUser, _passwordController.text.trim());
+            
+            if (mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User record created successfully')));
+            }
+        } catch (e) {
+             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        } finally {
+            if (mounted) setState(() => _isSubmitting = false);
+        }
     }
 }

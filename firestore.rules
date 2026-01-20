@@ -1,0 +1,144 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // HELPER ENDPOINTS
+    // =========================================================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Get current user's data
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check roles
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserData().role == 'super_admin';
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && getUserData().role == 'teacher';
+    }
+    
+    function isStudent() {
+      return isAuthenticated() && getUserData().role == 'student';
+    }
+
+    // =========================================================================
+    // USERS COLLECTION
+    // =========================================================================
+    // Enforcing strict hierarchy: SuperAdmin -> Admin -> Teacher/Student
+    match /users/{userId} {
+      
+      // READ
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId || // Read own profile
+        isSuperAdmin() || // Super Admin sees all
+        (isAdmin() && resource.data.adminId == request.auth.uid) || // Admin sees their silo
+        (userId == getUserData().adminId) // User can read their Admin's profile (for status check)
+      );
+
+      // CREATE / UPDATE
+      allow write: if isAuthenticated() && (
+        request.auth.uid == userId || // User updates own profile (e.g. password/name)
+        isSuperAdmin() || // Super Admin manages all
+        (isAdmin() && request.resource.data.adminId == request.auth.uid) // Admin manages their silo
+      );
+    }
+
+    // =========================================================================
+    // QUIZZES COLLECTION
+    // =========================================================================
+    match /quizzes/{quizId} {
+      
+      // READ
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        
+        // Admin: Visible if quiz belongs to their silo
+        (isAdmin() && resource.data.adminId == request.auth.uid) ||
+        
+        // Teacher: Visible if they created it
+        (isTeacher() && resource.data.createdByUid == request.auth.uid) ||
+
+        // Student: Visible IF:
+        // 1. Belong to same Admin (Silo)
+        // 2. Matches Student's Class Level
+        // 3. Quiz is Active (not paused)
+        (isStudent() && 
+         resource.data.adminId == getUserData().adminId &&
+         resource.data.classLevel == getUserData().metadata.classLevel &&
+         resource.data.isPaused == false
+        )
+      );
+
+      // WRITE (Create/Update/Delete)
+      allow write: if isAuthenticated() && (
+        isSuperAdmin() ||
+        
+        // Admin: Manage silo quizzes
+        (isAdmin() && request.resource.data.adminId == request.auth.uid) ||
+        
+        // Teacher: Create/Manage OWN quizzes within their assigned Admin Silo
+        (isTeacher() && 
+         (resource == null || resource.data.createdByUid == request.auth.uid) && // New or Own
+         request.resource.data.adminId == getUserData().adminId // Must belong to same Admin
+        )
+      );
+    }
+
+    // =========================================================================
+    // RESULTS COLLECTION
+    // =========================================================================
+    match /results/{resultId} {
+      
+      // READ
+      allow read: if isAuthenticated() && (
+        // Student: Read own results
+        request.auth.uid == resource.data.userId || 
+        
+        // Admin: Read results in their silo
+        (isAdmin() && resource.data.adminId == request.auth.uid) ||
+        
+        // Teacher: Read results for quizzes they created? 
+        // Note: Result typically has quizId. To be safe, we might need to fetch quiz first.
+        // For simplicity/performance in rules: Teachers can read results where 'adminId' matches theirs?
+        // Or strictly where quizCreator == me. 
+        // Let's rely on AdminId silo for now for Teachers (Teachers in same silo trust each other?)
+        // Or better: Teachers read results for Quizzes where they are the creator.
+        // Complex join not possible in rules. 
+        // Fallback: Teacher can read results in their Admin Silo for now.
+        (isTeacher() && resource.data.adminId == getUserData().adminId)
+      );
+
+      // CREATE (Students submitting quiz)
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid &&
+        isStudent()
+      );
+    }
+    
+    // =========================================================================
+    // APP CONTENT (Public/Shared)
+    // =========================================================================
+    match /app_settings/{document=**} {
+      allow read: if true; // Public for splash screen / loading
+      allow write: if isSuperAdmin();
+    }
+    
+    match /teams/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+  }
+}

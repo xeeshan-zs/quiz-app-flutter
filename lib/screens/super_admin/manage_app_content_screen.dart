@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import '../../models/app_settings_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/cloudinary_service.dart';
@@ -135,10 +134,13 @@ class _ManageAppContentScreenState extends State<ManageAppContentScreen> {
             ],
           ),
           const SizedBox(height: 32),
+          
+          // --- Team Name ---
+          Text('Team Name', style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
           TextField(
             controller: _teamNameController,
             decoration: InputDecoration(
-              labelText: 'Team Name',
               hintText: 'e.g. Runtime Terrors',
               filled: true,
               fillColor: Colors.grey[50],
@@ -146,8 +148,49 @@ class _ManageAppContentScreenState extends State<ManageAppContentScreen> {
               prefixIcon: const Icon(Icons.groups_outlined),
             ),
           ),
-          const SizedBox(height: 16),
-          const Text('This name appears on the Login Screen, About Us page, and website footer.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          const SizedBox(height: 8),
+          const Text('Appears on Login, About Us, and Footer.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          
+          const SizedBox(height: 32),
+          
+          // --- Class Management ---
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Available Classes', style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
+              IconButton(
+                onPressed: _showAddClassDialog,
+                icon: const Icon(Icons.add_circle, color: Colors.deepPurple),
+                tooltip: 'Add Class',
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+          StreamBuilder<AppSettingsModel>(
+            stream: _firestoreService.getAppSettings(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox();
+              final classes = snapshot.data!.availableClasses;
+              // Sort numerically if possible
+              classes.sort((a, b) {
+                 int? ia = int.tryParse(a);
+                 int? ib = int.tryParse(b);
+                 if (ia != null && ib != null) return ia.compareTo(ib);
+                 return a.compareTo(b);
+              });
+
+              return Wrap(
+                spacing: 8, runSpacing: 8,
+                children: classes.map((c) => Chip(
+                  label: Text(c),
+                  backgroundColor: Colors.white,
+                  deleteIcon: const Icon(Icons.close, size: 14),
+                  onDeleted: () => _removeClass(c, classes),
+                )).toList(),
+              );
+            },
+          ),
+
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
@@ -168,6 +211,50 @@ class _ManageAppContentScreenState extends State<ManageAppContentScreen> {
         ],
       ),
     ).animate().fadeIn().slideY(begin: 0.1, end: 0);
+  }
+
+  void _showAddClassDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Class'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'e.g. 13, Kindergarten'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              if (controller.text.isNotEmpty) {
+                // Fetch current, add, save
+                // Optimistic approach for simplicity or proper fetch
+                 // We don't have direct access to 'classes' here without re-fetching
+                 // So we'll use a transaction or simple get-set
+                 final doc = await _firestoreService.getAppSettings().first; // Get one shot
+                 final currentList = List<String>.from(doc.availableClasses);
+                 if (!currentList.contains(controller.text)) {
+                    currentList.add(controller.text);
+                    await _firestoreService.updateAppSettings(AppSettingsModel(teamName: doc.teamName, availableClasses: currentList));
+                 }
+                if (mounted) Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Add'),
+          )
+        ],
+      )
+    );
+  }
+
+  Future<void> _removeClass(String cls, List<String> currentList) async {
+     // currentList is from the stream snapshot, so it's fresh enough
+     final doc = await _firestoreService.getAppSettings().first; // Double check
+     final list = List<String>.from(doc.availableClasses);
+     list.remove(cls);
+     await _firestoreService.updateAppSettings(AppSettingsModel(teamName: doc.teamName, availableClasses: list));
   }
 
   Widget _buildTeamMembersPanel(BuildContext context) {

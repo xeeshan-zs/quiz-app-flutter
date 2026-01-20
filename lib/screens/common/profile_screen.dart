@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../providers/user_provider.dart';
 import '../../models/user_model.dart';
 import '../../services/cloudinary_service.dart';
@@ -202,6 +201,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        _buildTransparencyInfo(context, user),
                       ],
                     ),
                   ),
@@ -313,6 +314,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTransparencyInfo(BuildContext context, UserModel user) {
+    if (user.role == UserRole.super_admin) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        if (user.role == UserRole.student)
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              'Class: ${user.className}',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+            ),
+          ),
+        
+        if (user.adminId != null && user.role != UserRole.admin)
+           Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              'Institution ID: ...${user.adminId!.substring(user.adminId!.length > 6 ? user.adminId!.length - 6 : 0)}',
+              style: TextStyle(fontSize: 11, color: Colors.grey.withOpacity(0.5)),
+            ),
+          ),
+
+        if (user.role == UserRole.admin)
+           Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.purple.withOpacity(0.2)),
+              ),
+              child: Text(
+                '${user.subscribedClasses.length} Active Classes',
+                style: const TextStyle(fontSize: 12, color: Colors.purple, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

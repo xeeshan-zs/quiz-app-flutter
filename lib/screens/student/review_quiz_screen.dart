@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/quiz_model.dart';
 import '../../models/result_model.dart';
-import '../../models/quiz_model.dart';
-import '../../models/result_model.dart';
 import '../../services/firestore_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';

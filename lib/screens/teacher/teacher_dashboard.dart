@@ -5,7 +5,8 @@ import '../../models/quiz_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/quiz_app_bar.dart';
-import '../../widgets/quiz_app_drawer.dart';
+import '../../widgets/skeleton_quiz_card.dart'; // Ensure this matches actual path
+import '../../widgets/adaptive_layout.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -14,249 +15,371 @@ class TeacherDashboard extends StatefulWidget {
   State<TeacherDashboard> createState() => _TeacherDashboardState();
 }
 
-class _TeacherDashboardState extends State<TeacherDashboard> {
+
+
+ class _TeacherDashboardState extends State<TeacherDashboard> {
+  int _selectedIndex = 0;
   String _searchQuery = '';
   String _sortOption = 'Title (A-Z)';
+
+  void _onNavTapped(int index) {
+      if (index == _selectedIndex) return;
+      setState(() => _selectedIndex = index);
+      switch (index) {
+        case 0: break; // Dashboard
+        case 1: context.push('/teacher/create-quiz'); break;
+        case 2: context.push('/profile'); break;
+      }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>().user;
     final firestoreService = FirestoreService();
+    final isDesktop = MediaQuery.of(context).size.width >= 800; // Consistent with AdaptiveLayout
 
-    return Scaffold(
-      extendBodyBehindAppBar: true, 
-      appBar: QuizAppBar(user: user),
-      drawer: QuizAppDrawer(user: user),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: StreamBuilder<List<QuizModel>>(
-        stream: firestoreService.getAllQuizzes(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-             return Center(child: Text('Error: ${snapshot.error}'));
-          }
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-          var allQuizzes = snapshot.data ?? [];
-          var myQuizzes = allQuizzes.where((q) => q.createdByUid == user?.uid).toList();
-          final activeCount = myQuizzes.where((q) => !q.isPaused).length;
+    return AdaptiveLayout(
+        currentIndex: _selectedIndex,
+        onDestinationSelected: _onNavTapped,
+        mobileAppBar: QuizAppBar(user: user),
+        floatingActionButton: (!isDesktop && _selectedIndex == 0)
+            ? FloatingActionButton.extended(
+                onPressed: () => context.push('/teacher/create-quiz'),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text('Create', style: TextStyle(color: Colors.white)),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              )
+            : null,
+        destinations: const [
+          AdaptiveDestination(icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard, label: 'Home'),
+          AdaptiveDestination(icon: Icons.add_circle_outline, selectedIcon: Icons.add_circle, label: 'Create'),
+          AdaptiveDestination(icon: Icons.person_outlined, selectedIcon: Icons.person, label: 'Profile'),
+        ],
+        body: StreamBuilder<List<QuizModel>>(
+          stream: firestoreService.getQuizzesForAdmin(user.adminId ?? ''),
+          builder: (context, snapshot) {
+            
+            // -----------------------------------------------------
+            // 1. Loading State (Skeletons)
+            // -----------------------------------------------------
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CustomScrollView(
+                slivers: [
+                   _buildHeroSection(context, 0, 0), // Placeholders
+                   _buildControlsSection(context),
+                   SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                      sliver: SliverGrid(
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 400,
+                          mainAxisExtent: 280,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => const SkeletonQuizCard(),
+                          childCount: 4, 
+                        ),
+                      ),
+                   ),
+                ],
+              );
+            }
+  
+            if (snapshot.hasError) {
+               return Center(child: Text('Error: ${snapshot.error}'));
+            }
+  
+            // -----------------------------------------------------
+            // 2. Data Processing & Filtering
+            // -----------------------------------------------------
+            var allQuizzes = snapshot.data ?? [];
+            // Filter: Created by Me (since this is 'Your Quizzes')
+            var myQuizzes = allQuizzes.where((q) => q.createdByUid == user.uid).toList();
+            
+            // Split Drafts vs Published
+            var drafts = myQuizzes.where((q) => q.isDraft).toList();
+            var published = myQuizzes.where((q) => !q.isDraft).toList();
 
-          // Search
-          if (_searchQuery.isNotEmpty) {
-            myQuizzes = myQuizzes.where((q) => q.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
-          }
+            final activeCount = published.where((q) => !q.isPaused).length;
+            final totalCount = published.length;
+            final draftCount = drafts.length;
 
-          // Sort
-          if (_sortOption == 'Title (A-Z)') {
-            myQuizzes.sort((a, b) => a.title.compareTo(b.title));
-          } else if (_sortOption == 'Title (Z-A)') {
-            myQuizzes.sort((a, b) => b.title.compareTo(a.title));
-          } else if (_sortOption == 'Duration (Shortest)') {
-            myQuizzes.sort((a, b) => a.durationMinutes.compareTo(b.durationMinutes));
-          } else if (_sortOption == 'Duration (Longest)') {
-            myQuizzes.sort((a, b) => b.durationMinutes.compareTo(a.durationMinutes));
-          }
+            // Search
+            if (_searchQuery.isNotEmpty) {
+              drafts = drafts.where((q) => q.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+              published = published.where((q) => q.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+            }
 
-          return CustomScrollView(
-            slivers: [
-              // Hero Section
-              SliverToBoxAdapter(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(32, 120, 32, 40),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1E1B2E), 
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF2E236C), // Deep Purple
-                        Color(0xFF433D8B),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(32),
-                      bottomRight: Radius.circular(32),
+            // Sort
+            void sortQuizzes(List<QuizModel> list) {
+              if (_sortOption == 'Title (A-Z)') {
+                list.sort((a, b) => a.title.compareTo(b.title));
+              } else if (_sortOption == 'Title (Z-A)') {
+                list.sort((a, b) => b.title.compareTo(a.title));
+              } else if (_sortOption == 'Duration (Shortest)') {
+                list.sort((a, b) => a.durationMinutes.compareTo(b.durationMinutes));
+              } else if (_sortOption == 'Duration (Longest)') {
+                list.sort((a, b) => b.durationMinutes.compareTo(a.durationMinutes));
+              }
+            }
+            sortQuizzes(drafts);
+            sortQuizzes(published);
+
+            // -----------------------------------------------------
+            // 3. Main Content
+            // -----------------------------------------------------
+            return CustomScrollView(
+              slivers: [
+                // Hero Section
+                _buildHeroSection(context, activeCount, totalCount),
+
+                // Controls (Search & Sort)
+                _buildControlsSection(context),
+
+                if (drafts.isEmpty && published.isEmpty)
+                   SliverToBoxAdapter(
+                     child: Padding(
+                       padding: const EdgeInsets.all(40),
+                       child: Center(
+                         child: Column(
+                           mainAxisSize: MainAxisSize.min,
+                           children: [
+                             Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[300]),
+                             const SizedBox(height: 16),
+                             Text(
+                               _searchQuery.isNotEmpty 
+                                 ? 'No matches found.'
+                                 : 'You haven\'t created any quizzes yet.',
+                               style: TextStyle(color: Colors.grey[600]),
+                             ),
+                             if (_searchQuery.isEmpty) ...[
+                               const SizedBox(height: 16),
+                               FilledButton.icon(
+                                 onPressed: () => context.push('/teacher/create-quiz'),
+                                 icon: const Icon(Icons.add),
+                                 label: const Text('Create Your First Quiz'),
+                               ),
+                             ],
+                           ],
+                         ),
+                       ),
+                     ),
+                   ),
+
+                // DRAFTS SECTION
+                if (drafts.isNotEmpty) ...[
+                   SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_note, size: 24, color: Colors.orange),
+                          const SizedBox(width: 12),
+                          Text('Drafts', style: Theme.of(context).textTheme.headlineSmall),
+                          const Spacer(),
+                          Text('$draftCount drafts', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 13)),
+                        ],
+                      ),
                     ),
                   ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildQuizCard(context, drafts[index], firestoreService),
+                        childCount: drafts.length,
+                      ),
+                    ),
+                  ),
+                ],
+
+                // PUBLISHED SECTION
+                if (published.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.grid_view_rounded, size: 24, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 12),
+                          Text('Published Quizzes', style: Theme.of(context).textTheme.headlineSmall),
+                          const Spacer(),
+                          Text('$totalCount published', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildQuizCard(context, published[index], firestoreService),
+                        childCount: published.length,
+                      ),
+                    ),
+                  ),
+                ],
+                  
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              ],
+            );
+          },
+        ),
+    );
+  }
+
+  // -----------------------------------------------------
+  // Helper Widgets
+  // -----------------------------------------------------
+
+  Widget _buildHeroSection(BuildContext context, int active, int total) {
+    final theme = Theme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width > 600;
+
+    return SliverToBoxAdapter(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(32, 120, 32, 40),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1B2E), 
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary, // Deep Royal Purple from AppTheme
+              theme.colorScheme.secondary, // Lighter Purple
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(32),
+            bottomRight: Radius.circular(32),
+          ),
+          boxShadow: [
+             BoxShadow(color: theme.colorScheme.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Dashboard Main Content
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      Text(
+                        'Teacher Dashboard',
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          color: Colors.white,
+                          fontSize: isDesktop ? 42 : 32,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Manage your quizzes, track student performance, and create new assessments.',
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                      ),
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Teacher Dashboard',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 42,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Manage your quizzes, track student performance, and create new assessments.',
-                                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                                ),
-                                const SizedBox(height: 24),
-                                Row(
-                                  children: [
-                                    _buildStatBadge(Icons.play_circle_fill, '$activeCount Active Quizzes'),
-                                    const SizedBox(width: 12),
-                                    _buildStatBadge(Icons.library_books, '${myQuizzes.length} Total'),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Create Button (Visible on Desktop)
-                          if (MediaQuery.of(context).size.width > 600)
-                             ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF8B5CF6), // Bright Purple
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                                  elevation: 8,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                ),
-                                onPressed: () => context.push('/teacher/create-quiz'),
-                                icon: const Icon(Icons.add, size: 24), 
-                                label: const Text('Create New Quiz', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                             ),
+                          _buildStatBadge(Icons.play_circle_fill, '$active Active'),
+                          const SizedBox(width: 12),
+                          _buildStatBadge(Icons.library_books, '$total Total'),
                         ],
                       ),
-                      // Create Button (Visible on Mobile)
-                      if (MediaQuery.of(context).size.width <= 600) ...[
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF8B5CF6), // Bright Purple
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                  elevation: 8,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                ),
-                                onPressed: () => context.push('/teacher/create-quiz'),
-                                icon: const Icon(Icons.add, size: 24), 
-                                label: const Text('Create New Quiz', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                             ),
-                          )
-                      ],
-                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
-              ),
-
-              // Search Control
-              SliverToBoxAdapter(
-                 child: Padding(
-                   padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
-                   child: Row(
-                     children: [
-                       Expanded(
-                         child: TextField(
-                           onChanged: (val) => setState(() => _searchQuery = val),
-                           decoration: InputDecoration(
-                             hintText: 'Search your quizzes...',
-                             prefixIcon: const Icon(Icons.search),
-                             filled: true,
-                             fillColor: Colors.white,
-                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                             border: OutlineInputBorder(
-                               borderRadius: BorderRadius.circular(12),
-                               borderSide: BorderSide.none,
-                             ),
-                             enabledBorder: OutlineInputBorder(
-                               borderRadius: BorderRadius.circular(12),
-                               borderSide: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                             ),
-                           ),
-                         ),
-                       ),
-                       const SizedBox(width: 16),
-                       Container(
-                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                         decoration: BoxDecoration(
-                           color: Colors.white,
-                           borderRadius: BorderRadius.circular(12),
-                           border: Border.all(color: Colors.grey.withOpacity(0.1)),
-                         ),
-                         child: DropdownButtonHideUnderline(
-                           child: DropdownButton<String>(
-                             value: _sortOption,
-                             icon: const Icon(Icons.sort),
-                             borderRadius: BorderRadius.circular(12),
-                             items: ['Title (A-Z)', 'Title (Z-A)', 'Duration (Shortest)', 'Duration (Longest)']
-                                 .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13))))
-                                 .toList(),
-                             onChanged: (val) {
-                               if (val != null) setState(() => _sortOption = val);
-                             },
-                           ),
-                         ),
-                       ),
-                     ],
+                if (isDesktop)
+                   ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: theme.colorScheme.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: () => context.push('/teacher/create-quiz'),
+                      icon: const Icon(Icons.add, size: 24), 
+                      label: const Text('Create Quiz', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                   ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildControlsSection(BuildContext context) {
+    return SliverToBoxAdapter(
+       child: Padding(
+         padding: const EdgeInsets.fromLTRB(32, 40, 32, 16),
+         child: Wrap(
+           alignment: WrapAlignment.spaceBetween,
+           crossAxisAlignment: WrapCrossAlignment.center,
+           spacing: 16,
+           runSpacing: 16,
+           children: [
+             Row(
+               mainAxisSize: MainAxisSize.min,
+               children: [
+                 const Icon(Icons.list_alt, size: 28),
+                 const SizedBox(width: 12),
+                 Text('Quiz Directory', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+               ],
+             ),
+             
+             Wrap(
+               spacing: 12,
+               runSpacing: 12,
+               crossAxisAlignment: WrapCrossAlignment.center,
+               children: [
+                 Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 12),
+                   decoration: BoxDecoration(
+                     color: Colors.grey.withOpacity(0.1),
+                     borderRadius: BorderRadius.circular(20),
+                   ),
+                   child: DropdownButtonHideUnderline(
+                     child: DropdownButton<String>(
+                       value: _sortOption,
+                       borderRadius: BorderRadius.circular(16),
+                       items: ['Title (A-Z)', 'Title (Z-A)', 'Duration (Shortest)', 'Duration (Longest)']
+                           .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))))
+                           .toList(),
+                       onChanged: (val) {
+                         if (val != null) setState(() => _sortOption = val);
+                       },
+                     ),
                    ),
                  ),
-              ),
-
-              // Title
-               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.grid_view_rounded, size: 28),
-                      const SizedBox(width: 12),
-                      Text('Your Quizzes', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      Text('${myQuizzes.length} found', style: const TextStyle(color: Colors.grey, fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Grid
-              if (myQuizzes.isEmpty)
-                 const SliverToBoxAdapter(
-                   child: Padding(
-                     padding: EdgeInsets.all(40),
-                     child: Center(child: Text('No quizzes found.')),
+                 Container(
+                   constraints: const BoxConstraints(maxWidth: 250),
+                   child: TextField(
+                     onChanged: (val) => setState(() => _searchQuery = val),
+                     decoration: InputDecoration(
+                       hintText: 'Search quizzes...',
+                       prefixIcon: const Icon(Icons.search),
+                       filled: true,
+                       fillColor: Colors.grey.withOpacity(0.1),
+                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                     ),
                    ),
-                 )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 400,
-                      mainAxisExtent: 260,
-                      crossAxisSpacing: 24,
-                      mainAxisSpacing: 24,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        return _buildQuizCard(context, myQuizzes[index], firestoreService);
-                      },
-                      childCount: myQuizzes.length,
-                    ),
-                  ),
-                ),
-                
-              const SliverToBoxAdapter(child: SizedBox(height: 60)),
-            ],
-          );
-        },
-      ),
+                 ),
+               ],
+             ),
+           ],
+         ),
+       ),
     );
   }
 
@@ -264,14 +387,14 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.blueAccent, size: 18),
+          Icon(icon, color: Colors.amberAccent, size: 16),
           const SizedBox(width: 8),
           Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         ],
@@ -280,175 +403,194 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   }
 
   Widget _buildQuizCard(BuildContext context, QuizModel quiz, FirestoreService service) {
-    return Card(
-      elevation: 4,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: quiz.isPaused ? Colors.grey.withOpacity(0.2) : Colors.green.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    quiz.isPaused ? 'Paused' : 'Active',
-                    style: TextStyle(
-                      color: quiz.isPaused ? Colors.grey[700] : Colors.green[700], 
-                      fontSize: 12, 
-                      fontWeight: FontWeight.bold
-                    ),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Colors.grey),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      context.push('/teacher/create-quiz', extra: quiz);
-                    } else if (value == 'delete') {
-                      showDialog(
-                        context: context, 
-                        builder: (context) => AlertDialog(
-                          title: const Text('Delete Quiz'),
-                          content: const Text('Are you sure you want to delete this quiz? This action cannot be undone.'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                            FilledButton(
-                              onPressed: () {
-                                service.deleteQuiz(quiz.id);
-                                Navigator.pop(context);
-                              }, 
-                              style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                              child: const Text('Delete')
+    final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width <= 600;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(4, 8)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/teacher/results/${quiz.id}', extra: quiz),
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: isSmallScreen
+               ? Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Row(
+                       children: [
+                         Container(
+                           width: 48, height: 48,
+                           decoration: BoxDecoration(
+                             color: _getStatusColor(quiz).withOpacity(0.1),
+                             borderRadius: BorderRadius.circular(16),
+                           ),
+                           child: Icon(Icons.assignment_rounded, color: _getStatusColor(quiz), size: 24),
+                         ),
+                         const SizedBox(width: 16),
+                         Expanded(
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                               Text(quiz.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                               const SizedBox(height: 4),
+                               Text('${quiz.durationMinutes} mins • ${quiz.totalMarks} pts', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                             ],
+                           ),
+                         ),
+                       ],
+                     ),
+                     const SizedBox(height: 16),
+                     const Divider(height: 1),
+                     const SizedBox(height: 16),
+                     Row(
+                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       children: [
+                          _buildQuizStatusBadge(quiz),
+                          Row(
+                             children: [
+                               IconButton(
+                                 icon: Icon(quiz.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, color: Colors.orange),
+                                 tooltip: quiz.isPaused ? 'Resume' : 'Pause',
+                                 onPressed: () => service.toggleQuizStatus(quiz.id, quiz.isPaused),
+                               ),
+                               IconButton(
+                                 icon: const Icon(Icons.edit_rounded, color: Colors.blue),
+                                 tooltip: 'Edit',
+                                 onPressed: () => context.push('/teacher/create-quiz', extra: quiz),
+                               ),
+                               IconButton(
+                                 icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                                 onPressed: () => _showDeleteDialog(context, service, quiz),
+                               ),
+                            ],
+                         ),
+                       ],
+                     ),
+                   ],
+               )
+               : Row(
+                   children: [
+                     Container(
+                       width: 48, height: 48,
+                       decoration: BoxDecoration(
+                         color: _getStatusColor(quiz).withOpacity(0.1),
+                         borderRadius: BorderRadius.circular(16),
+                       ),
+                       child: Icon(Icons.assignment_rounded, color: _getStatusColor(quiz), size: 24),
+                     ),
+                     const SizedBox(width: 20),
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           Text(quiz.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                           const SizedBox(height: 4),
+                           Text('${quiz.questions.length} Questions • ${quiz.durationMinutes} mins • ${quiz.totalMarks} pts', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                         ],
+                       ),
+                     ),
+                     const SizedBox(width: 20),
+                     _buildQuizStatusBadge(quiz),
+                     const SizedBox(width: 24),
+                     Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                            IconButton(
+                              icon: Icon(quiz.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, color: Colors.orange),
+                              tooltip: quiz.isPaused ? 'Resume' : 'Pause',
+                              onPressed: () => service.toggleQuizStatus(quiz.id, quiz.isPaused),
                             ),
-                          ],
-                        )
-                      );
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text('Edit', style: TextStyle(color: Colors.blue)),
+                            IconButton(
+                               icon: const Icon(Icons.edit_rounded, color: Colors.blue),
+                               tooltip: 'Edit',
+                               onPressed: () => context.push('/teacher/create-quiz', extra: quiz),
+                            ),
+                            IconButton(
+                               icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                               onPressed: () => _showDeleteDialog(context, service, quiz),
+                            ),
+                            const SizedBox(width: 12),
+                            FilledButton.tonal(
+                               style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1), 
+                                  foregroundColor: theme.colorScheme.primary,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                               ),
+                               onPressed: () => context.push('/teacher/results/${quiz.id}', extra: quiz),
+                               child: const Text('Results'),
+                            ),
                         ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              quiz.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            
-            // Info Row
-            Row(
-              children: [
-                _buildInfoPill(Icons.access_time, '${quiz.durationMinutes} m'),
-                const SizedBox(width: 8),
-                _buildInfoPill(Icons.emoji_events_outlined, '${quiz.totalMarks} pts'),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-               width: double.infinity,
-               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-               decoration: BoxDecoration(
-                 color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                 borderRadius: BorderRadius.circular(8),
+                     ),
+                   ],
                ),
-               child: Row(
-                 children: [
-                   const Icon(Icons.people_outline, size: 16, color: Colors.grey),
-                   const SizedBox(width: 8),
-                   Text(
-                     quiz.questions.isNotEmpty ? 'Class: ${quiz.questions.length} Qs' : 'No Data', 
-                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)
-                   ),
-                 ],
-               ),
-            ),
-            const Spacer(),
-            
-            // Actions
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.cyan,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 0), // Compact
-                      minimumSize: const Size(0, 36)
-                    ),
-                    onPressed: () => context.push('/teacher/results/${quiz.id}', extra: quiz),
-                    icon: const Icon(Icons.bar_chart, size: 16),
-                    label: const Text('Results'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 0),
-                      minimumSize: const Size(0, 36)
-                    ),
-                    onPressed: () => service.toggleQuizStatus(quiz.id, quiz.isPaused),
-                    icon: Icon(quiz.isPaused ? Icons.play_arrow : Icons.pause, size: 16),
-                    label: Text(quiz.isPaused ? 'Resume' : 'Pause'),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoPill(IconData icon, String text) {
+  Widget _buildQuizStatusBadge(QuizModel quiz) {
+    Color color = _getStatusColor(quiz);
+    String text = quiz.isDraft ? 'DRAFT' : (quiz.isPaused ? 'PAUSED' : 'ACTIVE');
     return Container(
-       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-       decoration: BoxDecoration(
-         color: const Color(0xFF2C2C35).withOpacity(0.05), // Subtle grey
-         borderRadius: BorderRadius.circular(8),
-         border: Border.all(color: Colors.black12),
-       ),
-       child: Row(
-         children: [
-           Icon(icon, size: 14, color: Colors.amber[800]),
-           const SizedBox(width: 6),
-           Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-         ],
-       ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
+  }
+
+  Color _getStatusColor(QuizModel quiz) {
+     if (quiz.isDraft) return Colors.orange;
+     if (quiz.isPaused) return Colors.grey;
+     return Colors.green;
+  }
+
+  Widget _buildInfoIcon(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[800], fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, FirestoreService service, QuizModel quiz) {
+    showDialog(
+      context: context, 
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Quiz'),
+        content: const Text('Are you sure you want to delete this quiz? This action cannot be undone and will remove all associated results.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              service.deleteQuiz(quiz.id);
+              Navigator.pop(context);
+            }, 
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete')
+          ),
+        ],
+      )
     );
   }
 }

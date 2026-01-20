@@ -1,17 +1,23 @@
 class AppSettingsModel {
   final String teamName;
+  final List<String> availableClasses;
 
-  AppSettingsModel({required this.teamName});
+  AppSettingsModel({
+    required this.teamName,
+    this.availableClasses = const ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+  });
 
   factory AppSettingsModel.fromMap(Map<String, dynamic> map) {
     return AppSettingsModel(
       teamName: map['teamName'] ?? 'Runtime Terrors',
+      availableClasses: List<String>.from(map['availableClasses'] ?? ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'teamName': teamName,
+      'availableClasses': availableClasses,
     };
   }
 }

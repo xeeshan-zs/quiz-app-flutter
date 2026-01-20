@@ -5,10 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/quiz_model.dart';
 import '../../models/result_model.dart';
-import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 class QuizAttemptScreen extends StatefulWidget {

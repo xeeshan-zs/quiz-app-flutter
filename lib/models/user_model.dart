@@ -5,9 +5,14 @@ class UserModel {
   final String uid;
   final String email;
   final String name;
-  final String? photoUrl; // New field
+  final String? photoUrl;
   final UserRole role;
   final bool isDisabled;
+  
+  // Hierarchy Fields
+  final String? createdBy; // UID of the user who created this user
+  final String? adminId;   // UID of the Admin (Tenant) who owns this user hierarchy
+  
   final Map<String, dynamic> metadata;
 
   UserModel({
@@ -17,6 +22,8 @@ class UserModel {
     required this.role,
     this.photoUrl,
     this.isDisabled = false,
+    this.createdBy,
+    this.adminId,
     this.metadata = const {},
   });
 
@@ -27,6 +34,8 @@ class UserModel {
     String? photoUrl,
     UserRole? role,
     bool? isDisabled,
+    String? createdBy,
+    String? adminId,
     Map<String, dynamic>? metadata,
   }) {
     return UserModel(
@@ -36,6 +45,8 @@ class UserModel {
       photoUrl: photoUrl ?? this.photoUrl,
       role: role ?? this.role,
       isDisabled: isDisabled ?? this.isDisabled,
+      createdBy: createdBy ?? this.createdBy,
+      adminId: adminId ?? this.adminId,
       metadata: metadata ?? this.metadata,
     );
   }
@@ -46,8 +57,10 @@ class UserModel {
       'email': email,
       'name': name,
       'photoUrl': photoUrl,
-      'role': role.name, // Store as string
+      'role': role.name,
       'isDisabled': isDisabled,
+      'createdBy': createdBy,
+      'adminId': adminId,
       'metadata': metadata,
     };
   }
@@ -63,6 +76,8 @@ class UserModel {
         orElse: () => UserRole.unknown,
       ),
       isDisabled: map['isDisabled'] ?? false,
+      createdBy: map['createdBy'],
+      adminId: map['adminId'],
       metadata: Map<String, dynamic>.from(map['metadata'] ?? {}),
     );
   }
@@ -73,6 +88,9 @@ class UserModel {
   String? get degree => metadata['degree'];
   String? get semester => metadata['semester'];
   String? get section => metadata['section'];
+  
+  // Admin Specific
+  List<String> get subscribedClasses => List<String>.from(metadata['subscribedClasses'] ?? []);
 
   String get className {
     if (degree != null && semester != null) {

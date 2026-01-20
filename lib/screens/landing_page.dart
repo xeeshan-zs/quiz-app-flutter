@@ -461,8 +461,9 @@ class LandingPage extends StatelessWidget {
 
   void _navigateToDashboard(BuildContext context, dynamic role) {
      final r = role.toString();
-     if (r.contains('student')) context.go('/student');
-     else if (r.contains('teacher')) context.go('/teacher');
+     if (r.contains('student')) {
+       context.go('/student');
+     } else if (r.contains('teacher')) context.go('/teacher');
      else if (r.contains('super_admin')) context.go('/super_admin');
      else if (r.contains('admin')) context.go('/admin');
      else context.go('/login');

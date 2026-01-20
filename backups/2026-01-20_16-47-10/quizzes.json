@@ -1,0 +1,318 @@
+{
+  "1c9d66f3-f672-43cc-827f-521c7f2a6d89": {
+    "createdAt": 1767792880980,
+    "title": "Flutter",
+    "createdByUid": "UzZrYylzFTcB56yDAcvOOp2z2tI2",
+    "id": "1c9d66f3-f672-43cc-827f-521c7f2a6d89",
+    "durationMinutes": 10,
+    "isPaused": false,
+    "questions": [
+      {
+        "text": "What is the main purpose of a Container widget in Flutter?",
+        "id": "f581cc3a-6ff8-46de-a6ae-34c33e3b9391",
+        "options": [
+          "To handle user input",
+          "To create navigation between screens",
+          "To combine common painting, positioning, and sizing widgets",
+          "To fetch data from an API"
+        ],
+        "correctOptionIndex": 2
+      },
+      {
+        "text": "Which constructor is commonly used to create a scrollable list with dynamically generated items?",
+        "id": "d875c12b-36fe-4f49-a820-e5487b333d26",
+        "options": [
+          "ListView()",
+          "ListView.builder()",
+          "Column()",
+          "SingleChildScrollView()"
+        ],
+        "correctOptionIndex": 1
+      },
+      {
+        "text": "What does a StreamBuilder widget do in Flutter?",
+        "id": "1dce17fc-e104-4ddc-abaa-4d3d21b0f27d",
+        "options": [
+          "Builds UI based on future data only once",
+          "Listens to a stream and rebuilds UI when new data arrives",
+          "Sends data to Firebase",
+          "Stores data locally"
+        ],
+        "correctOptionIndex": 1
+      },
+      {
+        "text": "Which function is commonly used to insert data into a Firebase Firestore collection?",
+        "id": "5eedb5e1-532b-4a92-8b7f-36ce48a5e5cf",
+        "options": [
+          "insert()",
+          "add()",
+          "push()",
+          "create()"
+        ],
+        "correctOptionIndex": 1
+      },
+      {
+        "text": "Which function is used to update an existing document in Firebase Firestore?",
+        "id": "0072c362-64db-43af-82e8-901a051b26fb",
+        "options": [
+          "modify()",
+          "change()",
+          "update()",
+          "setData()"
+        ],
+        "correctOptionIndex": 2
+      }
+    ],
+    "totalMarks": 5
+  },
+  "Jl3UGoLrJiHg1l9PXATO": {
+    "createdBy": "1vmvrVZLQ5PlKHLMjPb92EACyb32",
+    "createdAt": "2025-12-24 13:59:47.241000+00:00",
+    "durationMinutes": 1,
+    "totalMarks": 10,
+    "isPaused": true,
+    "questions": [
+      {
+        "text": "Which data structure uses the principle of First In, First Out (FIFO)?",
+        "id": "1028d635-b54b-4f6d-9893-7b7c04a04ef6",
+        "options": [
+          "Tree",
+          "Graph",
+          "Stack",
+          "Queue"
+        ],
+        "correctOptionIndex": 3
+      }
+    ],
+    "status": "active",
+    "targetAudience": {
+      "semester": null,
+      "degree": ""
+    },
+    "title": "DSA"
+  },
+  "ScM4ZT0xltt2Zy74qupf": {
+    "createdBy": "1vmvrVZLQ5PlKHLMjPb92EACyb32",
+    "createdAt": "2025-12-24 13:02:28.327000+00:00",
+    "durationMinutes": 1,
+    "title": "Quiz 1",
+    "isPaused": true,
+    "questions": [
+      {
+        "text": "Question 1",
+        "id": "091d771f-1b1b-4dc4-9f38-3c087de72794",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "text": "question 2",
+        "id": "4a30064e-901d-492b-af06-ed1ec5990909",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "correctOptionIndex": 1
+      },
+      {
+        "text": "Question 3",
+        "id": "c57e2bbd-9513-4f47-a01a-cadf69119eb0",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "correctOptionIndex": 2
+      },
+      {
+        "text": "Question 4",
+        "id": "d68f1614-ca1b-407e-b5d1-5e81e79a9285",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "correctOptionIndex": 3
+      }
+    ],
+    "targetAudience": {
+      "semester": "4",
+      "degree": "BSCS"
+    },
+    "totalMarks": 10
+  },
+  "X6vQYfPBYxuyhYiyJCGT": {
+    "createdAt": 1766738315934,
+    "title": "Flutter Quiz",
+    "createdByUid": "1vmvrVZLQ5PlKHLMjPb92EACyb32",
+    "id": "X6vQYfPBYxuyhYiyJCGT",
+    "durationMinutes": 2,
+    "isPaused": true,
+    "questions": [
+      {
+        "text": "Which framework is being used to make this app?",
+        "id": "f19515b0-0213-43b9-9a30-fdda9bc08ceb",
+        "options": [
+          "flutter",
+          "react",
+          "mern",
+          "none of above"
+        ],
+        "correctOptionIndex": 0
+      }
+    ],
+    "totalMarks": 10
+  },
+  "meVkNOOCgshiwpbY8z5o": {
+    "createdBy": "7s9DhWrRrJSJw34Gi9nu6UA86Ht2",
+    "title": "PP",
+    "durationMinutes": 1,
+    "createdAt": "2025-12-26 06:05:14.138000+00:00",
+    "isPaused": true,
+    "questions": [
+      {
+        "text": "What is Ethics...?",
+        "id": "9995ebb4-f18d-4749-8b61-742fc5e60050",
+        "options": [
+          "pta nhi",
+          "hn pta hy ",
+          "kiu btau",
+          "none of above"
+        ],
+        "correctOptionIndex": 1
+      }
+    ],
+    "status": "active",
+    "targetAudience": {
+      "semester": 4,
+      "degree": "BSCS"
+    },
+    "totalMarks": 10
+  },
+  "n7tSl6tKiDWn90FfVynV": {
+    "createdBy": "1vmvrVZLQ5PlKHLMjPb92EACyb32",
+    "createdAt": "2025-12-26 06:42:33.907000+00:00",
+    "durationMinutes": 5,
+    "title": "OOP Concepts",
+    "isPaused": false,
+    "questions": [
+      {
+        "text": "Which principle of OOP describes the bundling of data with the methods that operate on that data?",
+        "id": "q1",
+        "options": [
+          "Encapsulation",
+          "Polymorphism",
+          "Inheritance",
+          "Abstraction"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "text": "Which concept allows a class to derive properties and behavior from another class?",
+        "id": "q2",
+        "options": [
+          "Polymorphism",
+          "Encapsulation",
+          "Inheritance",
+          "Aggregation"
+        ],
+        "correctOptionIndex": 2
+      },
+      {
+        "text": "What is the process of hiding the implementation details and showing only functionality to the user?",
+        "id": "q3",
+        "options": [
+          "Inheritance",
+          "Encapsulation",
+          "Polymorphism",
+          "Abstraction"
+        ],
+        "correctOptionIndex": 3
+      },
+      {
+        "text": "Which of the following creates an instance of a class?",
+        "id": "q4",
+        "options": [
+          "Method",
+          "Object",
+          "Interface",
+          "Constructor"
+        ],
+        "correctOptionIndex": 1
+      },
+      {
+        "text": "Which keyword is used to access the immediate parent class constructor?",
+        "id": "q5",
+        "options": [
+          "this",
+          "parent",
+          "super",
+          "base"
+        ],
+        "correctOptionIndex": 2
+      }
+    ],
+    "status": "active",
+    "targetAudience": {
+      "semester": null,
+      "degree": "BSCS"
+    },
+    "totalMarks": 10
+  },
+  "re5BCfKWDPg97EtVaYVf": {
+    "createdBy": "2b83ITSfBJTew8wNMR9veMUUMo22",
+    "title": "",
+    "durationMinutes": NaN,
+    "createdAt": "2025-12-24 16:47:46.351000+00:00",
+    "isPaused": true,
+    "questions": [
+      {
+        "text": "tere naam ka hero kon tha",
+        "id": "c9600112-6ab7-481f-84e4-74bb90fcd149",
+        "options": [
+          "Shah Rukh Khan",
+          "Brad Pitt",
+          "Tom Hardy",
+          "Salman Khan"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "text": "OP ka kya matlab ha?",
+        "id": "6c4d430b-02bd-4acb-94ec-ce0788368dbb",
+        "options": [
+          "Over Powered",
+          "Okhi Problem",
+          "Onki Ponky",
+          "none of these"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "text": "Quiz kesa tha ",
+        "id": "a34e3135-4c4d-491d-9107-da6fa395beaf",
+        "options": [
+          "OP",
+          "OG",
+          "Kamal",
+          "Acha tha"
+        ],
+        "correctOptionIndex": 0
+      }
+    ],
+    "status": "active",
+    "targetAudience": {
+      "semester": null,
+      "degree": ""
+    },
+    "totalMarks": NaN
+  }
+}

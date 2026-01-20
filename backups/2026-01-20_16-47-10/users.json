@@ -1,0 +1,357 @@
+{
+  "1tKuOo08OuOZkmkEUEUD3HuVLmi2": {
+    "role": "admin",
+    "isDisabled": false,
+    "metadata": {},
+    "uid": "1tKuOo08OuOZkmkEUEUD3HuVLmi2",
+    "email": "admin@lgite.com",
+    "photoUrl": "https://res.cloudinary.com/dwihjvj2p/image/upload/v1768399985/pzkrsbgiuijlva1vtf3g.png",
+    "name": "admin"
+  },
+  "1vmvrVZLQ5PlKHLMjPb92EACyb32": {
+    "role": "teacher",
+    "isDisabled": false,
+    "metadata": {
+      "department": "Computer Science"
+    },
+    "uid": "1vmvrVZLQ5PlKHLMjPb92EACyb32",
+    "email": "abara.ali@gmail.com",
+    "name": "abrar"
+  },
+  "2b83ITSfBJTew8wNMR9veMUUMo22": {
+    "role": "teacher",
+    "isDisabled": false,
+    "metadata": {
+      "department": "CS"
+    },
+    "uid": "2b83ITSfBJTew8wNMR9veMUUMo22",
+    "email": "ateeb051@gmail.com",
+    "name": "Ateeb Khalid"
+  },
+  "5maxEsvvzQX1F6pCc7UVLlv44A92": {
+    "name": "Marij Behram",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "au-32",
+      "className": "",
+      "degree": "BSCS"
+    },
+    "uid": "5maxEsvvzQX1F6pCc7UVLlv44A92",
+    "email": "mario@au.edu",
+    "photoUrl": null,
+    "role": "student"
+  },
+  "7s9DhWrRrJSJw34Gi9nu6UA86Ht2": {
+    "role": "teacher",
+    "isDisabled": false,
+    "metadata": {
+      "department": "Computer Science"
+    },
+    "uid": "7s9DhWrRrJSJw34Gi9nu6UA86Ht2",
+    "email": "zaheer@numl.edu",
+    "name": "Zaheer"
+  },
+  "E8fhNSm589dJhfervBuau5mN3nA3": {
+    "role": "teacher",
+    "isDisabled": false,
+    "metadata": {
+      "department": "Computer Science"
+    },
+    "uid": "E8fhNSm589dJhfervBuau5mN3nA3",
+    "email": "fahad@quiz.com",
+    "name": "Fahad"
+  },
+  "GcDJMjif6FYUpgBL2R4qOuFguuq2": {
+    "role": "super_admin",
+    "isDisabled": true,
+    "metadata": {},
+    "uid": "GcDJMjif6FYUpgBL2R4qOuFguuq2",
+    "email": "laiba31may@gmail.com",
+    "name": "laiba badar"
+  },
+  "GmUfr9mFdlWBulMvJiUEws82AmO2": {
+    "role": "admin",
+    "isDisabled": false,
+    "metadata": {},
+    "uid": "GmUfr9mFdlWBulMvJiUEws82AmO2",
+    "email": "admin@numl.edu",
+    "name": "Admin"
+  },
+  "IrR0cyfyIEXl2ujjIKOlRAMx0D63": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "123",
+      "semester": "1",
+      "section": "None",
+      "degree": "BSCS",
+      "department": "Computer Science"
+    },
+    "uid": "IrR0cyfyIEXl2ujjIKOlRAMx0D63",
+    "email": "burhan@quiz.com",
+    "name": "Burhan"
+  },
+  "Jyuuc8zx7VRbsrKmAM0e9cDWpno1": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "79",
+      "semester": "2",
+      "section": "A",
+      "degree": "BSCS",
+      "department": "Computer Science"
+    },
+    "uid": "Jyuuc8zx7VRbsrKmAM0e9cDWpno1",
+    "email": "student2@numl.edu",
+    "name": "Student2"
+  },
+  "PfFi4RvzEkXsaXccRpa9BbDqmY02": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "717",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "PfFi4RvzEkXsaXccRpa9BbDqmY02",
+    "email": "yasir@lgite.com",
+    "name": "yasir"
+  },
+  "QbrmuI6l1BgfUVfCQ7jiEzVIa9r1": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "test-01",
+      "className": "test-11"
+    },
+    "uid": "QbrmuI6l1BgfUVfCQ7jiEzVIa9r1",
+    "email": "student@lgite.com",
+    "photoUrl": null,
+    "name": "Test Student"
+  },
+  "RbmgUATKXLdMlG3qSNYnyRu63543": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "715",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "RbmgUATKXLdMlG3qSNYnyRu63543",
+    "email": "sameer@lgite.com",
+    "name": "sameer amir"
+  },
+  "Rmq3FiEgrgZll4idj3WCKlTeprk2": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "717",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "Rmq3FiEgrgZll4idj3WCKlTeprk2",
+    "email": "yasirali@lgite.com",
+    "name": "yasir"
+  },
+  "UFE94bkyqOOsyZmZhNo7Ov468av1": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "718",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "UFE94bkyqOOsyZmZhNo7Ov468av1",
+    "email": "Aryan@lgite.com",
+    "name": "aryan"
+  },
+  "UUskes6rDjWqI5iFkyx7UUKlTKG2": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "9878",
+      "className": "10",
+      "degree": "BSCS"
+    },
+    "uid": "UUskes6rDjWqI5iFkyx7UUKlTKG2",
+    "email": "hammad@lgite.com",
+    "name": "hammad"
+  },
+  "UzZrYylzFTcB56yDAcvOOp2z2tI2": {
+    "role": "teacher",
+    "isDisabled": false,
+    "metadata": {
+      "department": "Computer Science"
+    },
+    "uid": "UzZrYylzFTcB56yDAcvOOp2z2tI2",
+    "email": "faraz@lgite.com",
+    "name": "Faraz"
+  },
+  "XhtT8hImclTIcGEBOHK7EmP13m43": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "711",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "XhtT8hImclTIcGEBOHK7EmP13m43",
+    "email": "kareem@lgite.com",
+    "name": "kareem"
+  },
+  "YkmbhTtjmAQDFkODsuQnh5fHhTT2": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "123456",
+      "className": "12",
+      "degree": "BSCS"
+    },
+    "uid": "YkmbhTtjmAQDFkODsuQnh5fHhTT2",
+    "email": "zeeshan303.3.1@gmail.com",
+    "name": "Zeeshan"
+  },
+  "cbptowrGrWbqBpzqCOr81pknXlE3": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "CS-370",
+      "semester": "4",
+      "section": "B",
+      "degree": "BSCS",
+      "department": "Computer Science"
+    },
+    "uid": "cbptowrGrWbqBpzqCOr81pknXlE3",
+    "email": "student1@numl.edu",
+    "photoUrl": "https://res.cloudinary.com/dwihjvj2p/image/upload/v1768407478/yfxwgxoohbylpk2hvcvi.png",
+    "name": "Zeeshan"
+  },
+  "e20cee8e-c7b5-45ec-b5d1-fd89caedb195": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "7790",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "e20cee8e-c7b5-45ec-b5d1-fd89caedb195",
+    "email": "zain@lgite.com",
+    "name": "Zain"
+  },
+  "jEpVOgHmkfgGpkJIs0QwFibV2Xu2": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "77",
+      "semester": "3",
+      "section": "B",
+      "degree": "BSCS",
+      "department": "Computer Science"
+    },
+    "uid": "jEpVOgHmkfgGpkJIs0QwFibV2Xu2",
+    "email": "muneeb@lgite.com",
+    "photoUrl": "https://res.cloudinary.com/dwihjvj2p/image/upload/v1768570377/rtnzwhgoyvtpt43ordhy.jpg",
+    "name": "Muneeb"
+  },
+  "lljl6nFQhZaBQkoUygUuUuzBQag1": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "720",
+      "className": "4",
+      "degree": "BSCS"
+    },
+    "uid": "lljl6nFQhZaBQkoUygUuUuzBQag1",
+    "email": "zayan@lgite.com",
+    "name": "zayan"
+  },
+  "q0t1ND8OGQfM2AXSgwoIUFioY6v1": {
+    "role": "super_admin",
+    "isDisabled": true,
+    "metadata": {},
+    "uid": "q0t1ND8OGQfM2AXSgwoIUFioY6v1",
+    "email": "superadmin@example.com",
+    "name": "Super Admin"
+  },
+  "rpwAYGcfdwUbeyNyHekgItGRmlL2": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "714",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "rpwAYGcfdwUbeyNyHekgItGRmlL2",
+    "email": "ayan@lgite.com",
+    "name": "ayan khan"
+  },
+  "rujoiNe2tGdZ6iqPLZCzn7kk1dH3": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "719",
+      "className": "6",
+      "degree": "BSCS"
+    },
+    "uid": "rujoiNe2tGdZ6iqPLZCzn7kk1dH3",
+    "email": "Mohib@lgite.com",
+    "name": "mohib"
+  },
+  "tkQDMM9t20PewNomWQhxAdB0CO82": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "712",
+      "className": "11",
+      "degree": "BSCS"
+    },
+    "uid": "tkQDMM9t20PewNomWQhxAdB0CO82",
+    "email": "Rafaqat@lgite.com",
+    "name": "Rafaqat"
+  },
+  "uBt9Kr8QcQUYiEmBdKsfwC0xydD3": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "MEC-12",
+      "className": "MEC",
+      "degree": "BSCS"
+    },
+    "uid": "uBt9Kr8QcQUYiEmBdKsfwC0xydD3",
+    "email": "farhan@lgite.com",
+    "name": "Farhan Ali"
+  },
+  "v0sRPc0eQkasBHB4WB1VcGf9LRx2": {
+    "role": "super_admin",
+    "isDisabled": false,
+    "metadata": {},
+    "uid": "v0sRPc0eQkasBHB4WB1VcGf9LRx2",
+    "email": "super@lgite.com",
+    "photoUrl": "https://res.cloudinary.com/dwihjvj2p/image/upload/v1768409355/ndkee1u91slcg22zhyeh.jpg",
+    "name": "super admin"
+  },
+  "vjr4gDenj2bQ8ZdmrjajVO1YQUY2": {
+    "isDisabled": false,
+    "name": "Javeria Javaid",
+    "metadata": {
+      "rollNumber": "358",
+      "className": "BSCS IV-B"
+    },
+    "uid": "vjr4gDenj2bQ8ZdmrjajVO1YQUY2",
+    "email": "Javeria@numl.edu",
+    "photoUrl": "https://res.cloudinary.com/dwihjvj2p/image/upload/v1768456120/qw89pz8j4v2ef0svddvs.jpg",
+    "role": "student"
+  },
+  "xlfefZifDfbsByM29twsDJirNdl1": {
+    "role": "student",
+    "isDisabled": false,
+    "metadata": {
+      "rollNumber": "713",
+      "className": "10",
+      "degree": "BSCS"
+    },
+    "uid": "xlfefZifDfbsByM29twsDJirNdl1",
+    "email": "shahzaib@lgite.com",
+    "name": "shahzaib"
+  }
+}

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'firebase_options.dart'; // Ensure this exists or is handled
 import 'providers/user_provider.dart';
@@ -15,7 +14,6 @@ import 'services/firestore_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/landing_page.dart';
 import 'screens/about_us_screen.dart';
-import 'screens/dashboards.dart';
 import 'screens/student/student_dashboard.dart';
 import 'screens/student/quiz_attempt_screen.dart';
 import 'screens/student/review_quiz_screen.dart';
@@ -31,6 +29,7 @@ import 'screens/common/profile_screen.dart';
 import 'screens/common/user_guide_screen.dart';
 import 'screens/common/contact_us_screen.dart';
 import 'screens/common/our_app_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -296,49 +295,7 @@ class _MainAppRouterState extends State<MainAppRouter> {
       title: 'EduSync',
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4), 
-          brightness: Brightness.light,
-          primary: const Color(0xFF6750A4),
-          secondary: const Color(0xFF625B71),
-          tertiary: const Color(0xFF7D5260),
-          surface: const Color(0xFFFFFBFE),
-          background: const Color(0xFFFFFBFE),
-        ),
-        textTheme: GoogleFonts.outfitTextTheme(),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          backgroundColor: Colors.transparent,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFF6750A4), width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
     );
   }
 

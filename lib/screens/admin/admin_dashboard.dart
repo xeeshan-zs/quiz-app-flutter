@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/adaptive_layout.dart';
 import '../../widgets/quiz_app_bar.dart';
-import '../../widgets/quiz_app_drawer.dart';
+import '../../widgets/manage_classes_dialog.dart';
+import '../../widgets/edit_user_dialog.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -21,6 +22,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final FirestoreService _firestoreService = FirestoreService();
   String _searchQuery = '';
   String _selectedRoleFilter = 'All';
+  int _selectedIndex = 0;
+
+  void _onNavTapped(int index) {
+      if (index == _selectedIndex) return;
+      setState(() => _selectedIndex = index);
+      switch (index) {
+        case 0: break; // User Directory (Home)
+        case 1: context.push('/all-quizzes'); break;
+        case 2: context.push('/profile'); break;
+      }
+  }
 
   // Pagination State
   final List<UserModel> _users = [];
@@ -115,15 +127,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _fetchUsers(refresh: true);
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>().user;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true, 
-      appBar: QuizAppBar(user: user),
-      drawer: QuizAppDrawer(user: user),
-      backgroundColor: Theme.of(context).colorScheme.surface,
+
+    if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    return AdaptiveLayout(
+      currentIndex: _selectedIndex,
+      onDestinationSelected: _onNavTapped,
+      mobileAppBar: QuizAppBar(user: user),
+      destinations: const [
+        AdaptiveDestination(icon: Icons.people_outline, selectedIcon: Icons.people, label: 'Users'),
+        AdaptiveDestination(icon: Icons.assignment_outlined, selectedIcon: Icons.assignment, label: 'Quizzes'),
+        AdaptiveDestination(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile'),
+      ],
       body: RefreshIndicator(
         onRefresh: () async => _fetchUsers(refresh: true),
         child: CustomScrollView(
@@ -161,7 +182,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hello, ${user?.name ?? "Admin"}',
+                                'Hello, ${user.name}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 42,
@@ -210,7 +231,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 ),
                                 onPressed: () => _showCreateUserDialog(context),
                                 icon: const Icon(Icons.person_add, size: 24), 
-                                label: const Text('Add New User', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                label: const Text('Add User', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                             ),
+                             const SizedBox(width: 16),
+                             ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black87,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                onPressed: () => _showManageClassesDialog(context),
+                                icon: const Icon(Icons.class_outlined, size: 24), 
+                                label: const Text('Classes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                              ),
                         ]
                       ],
@@ -233,7 +268,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 label: const Text('Quizzes'),
                              ),
                            ),
-                           const SizedBox(width: 12),
+                           const SizedBox(width: 8),
                            Expanded(
                              child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
@@ -245,6 +280,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 onPressed: () => _showCreateUserDialog(context),
                                 icon: const Icon(Icons.person_add), 
                                 label: const Text('Add User'),
+                             ),
+                           ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                             child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black87,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                onPressed: () => _showManageClassesDialog(context),
+                                icon: const Icon(Icons.class_outlined), 
+                                label: const Text('Classes'),
                              ),
                            ),
                          ],
@@ -407,7 +456,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                             children: [
                                               Switch(
                                                 value: !u.isDisabled, 
-                                                activeColor: Colors.green,
+                                                activeThumbColor: Colors.green,
                                                 onChanged: (u.role == UserRole.admin) ? null : (val) async {
                                                    if (u.role == UserRole.super_admin) return;
                                                    try {
@@ -484,7 +533,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                           children: [
                                              Switch(
                                               value: !u.isDisabled, 
-                                              activeColor: Colors.green,
+                                              activeThumbColor: Colors.green,
                                               onChanged: (u.role == UserRole.admin) ? null : (val) async {
                                                  if (u.role == UserRole.super_admin) return;
                                                  try {
@@ -500,6 +549,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                                  } catch (e) {
                                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                                                  }
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                              tooltip: 'Edit User',
+                                              onPressed: () {
+                                                 showDialog(
+                                                   context: context,
+                                                   builder: (c) => EditUserDialog(
+                                                     user: u,
+                                                     onUserUpdated: (updatedUser) {
+                                                        // Refresh trigger if needed, though StreamBuilder usually handles it
+                                                        setState(() {
+                                                           final idx = _users.indexWhere((x) => x.uid == u.uid);
+                                                           if (idx != -1) _users[idx] = updatedUser;
+                                                        });
+                                                     },
+                                                   ),
+                                                 );
                                               },
                                             ),
                                             IconButton(
@@ -525,6 +593,48 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
     );
   }
+
+  // --- Manage Classes Dialog ---
+  void _showManageClassesDialog(BuildContext context) async {
+    final userProvider = context.read<UserProvider>();
+    final user = userProvider.user; // Ensure latest
+    if (user == null) return;
+
+    // Show loading dialog while fetching settings
+    showDialog(context: context, barrierDismissible: false, builder: (c) => const Center(child: CircularProgressIndicator()));
+    
+    try {
+      final settings = await _firestoreService.getAppSettings().first;
+      if (context.mounted) Navigator.pop(context); // Dismiss loading
+
+      // Current subscriptions
+      final List<String> currentSubs = user.subscribedClasses; // using helper
+
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => ManageClassesDialog(
+            availableClasses: settings.availableClasses, 
+            initialSelection: currentSubs,
+            onSave: (newSelection) async {
+               // Update Provider & Firestore
+               final newMetadata = Map<String, dynamic>.from(user.metadata);
+               newMetadata['subscribedClasses'] = newSelection;
+               
+               await userProvider.updateProfile(user.name, metadata: newMetadata);
+               if (context.mounted) Navigator.pop(context);
+               if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Classes updated successfully')));
+            },
+          ),
+        );
+      }
+
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context); // Dismiss loading
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error fetching classes: $e')));
+    }
+  }
+
 
   int get activeCount => 0; // handled in builder
 
@@ -619,14 +729,54 @@ class _CreateUserDialog extends StatefulWidget {
 class _CreateUserDialogState extends State<_CreateUserDialog> {
     final _formKey = GlobalKey<FormState>();
     final _emailController = TextEditingController();
-    final _passwordController = TextEditingController(); // Added
+    final _passwordController = TextEditingController(); 
     final _nameController = TextEditingController();
     UserRole _selectedRole = UserRole.student;
     
     final _rollNoController = TextEditingController();
-    final _classController = TextEditingController(); 
     
+    // Class Dropdown Logic
+    final List<String> _availableClasses = [];
+    String? _selectedClass;
+    bool _isLoadingClasses = true;
+
     bool _isSubmitting = false;
+
+    @override
+    void initState() {
+      super.initState();
+      _loadClasses();
+    }
+
+    Future<void> _loadClasses() async {
+      try {
+        final user = context.read<UserProvider>().user;
+        final adminClasses = user?.subscribedClasses ?? [];
+
+        if (adminClasses.isNotEmpty) {
+           if (mounted) {
+             setState(() {
+               _availableClasses.clear();
+               _availableClasses.addAll(adminClasses);
+               _isLoadingClasses = false;
+             });
+           }
+        } else {
+           // Fallback to Global Settings if Admin hasn't defined any
+            final settings = await FirestoreService().getAppSettings().first;
+            if (mounted) {
+              setState(() {
+                _availableClasses.clear();
+                _availableClasses.addAll(settings.availableClasses);
+                _isLoadingClasses = false;
+              });
+            }
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoadingClasses = false);
+        debugPrint('Error loading classes: $e');
+      }
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -672,7 +822,7 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
                               ),
                               const SizedBox(height: 16),
                               DropdownButtonFormField<UserRole>(
-                                  value: _selectedRole,
+                                  initialValue: _selectedRole,
                                   items: UserRole.values
                                       .where((role) => role == UserRole.student || role == UserRole.teacher)
                                       .map((role) => DropdownMenuItem(
@@ -697,13 +847,19 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
                                       ),
                                   ),
                                   const SizedBox(height: 16),
-                                  TextFormField(
-                                      controller: _classController,
+                                  // Class Dropdown
+                                  DropdownButtonFormField<String>(
+                                      value: _selectedClass,
                                       decoration: InputDecoration(
-                                        labelText: 'Class (e.g. BSCS-4B)',
+                                        labelText: _isLoadingClasses ? 'Loading classes...' : 'Class',
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                         prefixIcon: const Icon(Icons.class_outlined),
                                       ),
+                                      items: _availableClasses.map((cls) {
+                                          return DropdownMenuItem(value: cls, child: Text(cls));
+                                      }).toList(),
+                                      onChanged: (val) => setState(() => _selectedClass = val),
+                                      validator: (v) => v == null ? 'Please select a class' : null,
                                   ),
                               ]
                           ],
@@ -747,7 +903,7 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
                            if (_selectedRole == UserRole.student) {
                                metadata['rollNumber'] = _rollNoController.text;
                                metadata['degree'] = 'BSCS';
-                               metadata['className'] = _classController.text;
+                               metadata['className'] = _selectedClass;
                            }
                            
                            final newUser = UserModel(

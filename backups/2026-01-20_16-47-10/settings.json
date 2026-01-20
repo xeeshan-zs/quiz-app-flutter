@@ -1,0 +1,7 @@
+{
+  "app_links": {
+    "web": "",
+    "android": "https://github.com/xeeshan-zs/quiz-app-flutter/releases/download/Android-App/EduSync.apk",
+    "windows": "https://github.com/xeeshan-zs/EduSync/releases/download/1.0.4/EduSync-Setup.exe"
+  }
+}

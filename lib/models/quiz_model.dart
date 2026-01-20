@@ -50,6 +50,11 @@ class QuizModel {
   final int durationMinutes;
   final bool isPaused;
   final List<Question> questions;
+  
+  // Hierarchy & Filtering
+  final String? adminId;    // The Admin (Tenant) owning this quiz
+  final String? classLevel; // e.g., '10', '11'
+  final bool isDraft;       // Teacher "Quiz Bank"
 
   QuizModel({
     required this.id,
@@ -60,6 +65,9 @@ class QuizModel {
     required this.durationMinutes,
     this.isPaused = false,
     required this.questions,
+    this.adminId,
+    this.classLevel,
+    this.isDraft = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -72,6 +80,9 @@ class QuizModel {
       'durationMinutes': durationMinutes,
       'isPaused': isPaused,
       'questions': questions.map((q) => q.toMap()).toList(),
+      'adminId': adminId,
+      'classLevel': classLevel,
+      'isDraft': isDraft,
     };
   }
 
@@ -90,6 +101,9 @@ class QuizModel {
               ?.map((q) => Question.fromMap(q))
               .toList() ??
           [],
+      adminId: map['adminId'],
+      classLevel: map['classLevel']?.toString(), // Ensure string
+      isDraft: map['isDraft'] ?? false,
     );
   }
 }

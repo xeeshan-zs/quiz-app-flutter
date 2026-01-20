@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/quiz_model.dart';
 import '../../services/firestore_service.dart';
@@ -273,7 +272,7 @@ class _AllQuizzesScreenState extends State<AllQuizzesScreen> {
                                }
                              });
                            },
-                           activeColor: Colors.green,
+                           activeThumbColor: Colors.green,
                            inactiveTrackColor: Colors.red.withOpacity(0.3),
                          ),
                        ),
